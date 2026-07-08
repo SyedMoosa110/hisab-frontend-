@@ -9,7 +9,7 @@ import {
 import './App.css'
 
 const ChartPanel = lazy(() => import('./ChartPanel.jsx'))
-const apiBase = 'http://127.0.0.1:8000/api'
+const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
 const navItems = [
   ['Dashboard', LayoutDashboard], ['Transactions', BookOpen], ['Categories', Tags],
   ['Parties/Vendors', Users], ['Settings', Settings], ['Backup', Download],
