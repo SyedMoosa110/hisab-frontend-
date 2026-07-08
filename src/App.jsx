@@ -111,7 +111,9 @@ export default function App() {
     event.preventDefault()
     try {
       await prepareCsrf()
-      const response = await axios.post(`${apiBase}/auth/login/`, loginForm, { withCredentials: true, xsrfCookieName: 'csrftoken', xsrfHeaderName: 'X-CSRFToken' })
+      const csrfMatch = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]*)/)
+      const csrfToken = csrfMatch ? csrfMatch[1] : ''
+      const response = await axios.post(`${apiBase}/auth/login/`, loginForm, { withCredentials: true, headers: { 'X-CSRFToken': csrfToken } })
       setAuth(response.data)
       setLoginForm({ username: response.data.username, password: '' })
       setMessage('Login successful.')
