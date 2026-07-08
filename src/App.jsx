@@ -27,8 +27,13 @@ function currency(value) {
   return new Intl.NumberFormat('en-PK', { style: 'currency', currency: 'PKR', maximumFractionDigits: 0 }).format(Number(value || 0))
 }
 
+let csrfTokenCached = '';
+
 async function prepareCsrf() {
-  await axios.get(`${apiBase}/auth/csrf/`, { withCredentials: true })
+  const response = await axios.get(`${apiBase}/auth/csrf/`, { withCredentials: true })
+  if (response.data && response.data.csrfToken) {
+    csrfTokenCached = response.data.csrfToken;
+  }
 }
 
 function emptyTransaction(type = 'income') {
@@ -57,8 +62,12 @@ export default function App() {
   const api = useMemo(() => {
     const instance = axios.create({ baseURL: apiBase, withCredentials: true })
     instance.interceptors.request.use((config) => {
-      const match = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]*)/)
-      if (match) config.headers['X-CSRFToken'] = match[1]
+      let token = csrfTokenCached;
+      if (!token) {
+        const match = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]*)/)
+        if (match) token = match[1]
+      }
+      if (token) config.headers['X-CSRFToken'] = token
       return config
     })
     return instance
@@ -168,8 +177,7 @@ export default function App() {
     event.preventDefault()
     try {
       await prepareCsrf()
-      const csrfMatch = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]*)/)
-      const csrfToken = csrfMatch ? csrfMatch[1] : ''
+      const csrfToken = csrfTokenCached;
       const response = await axios.post(`${apiBase}/auth/login/`, loginForm, { withCredentials: true, headers: { 'X-CSRFToken': csrfToken } })
       setAuth(response.data)
       setLoginForm({ username: response.data.username, password: '' })
@@ -315,6 +323,7 @@ export default function App() {
   }
 
   return <div className="app">
+    {menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)} />}
     <aside className={menuOpen ? 'sidebar open' : 'sidebar'}>
       <div className="brand"><div className="brandMark"><Landmark size={22} /></div><div><strong>HisabPro</strong><span>Account Department</span></div></div>
       <nav>{navItems.map(([item, Icon]) => <button className={active === item ? 'active' : ''} key={item} onClick={() => { setActive(item); setMenuOpen(false) }}><Icon size={18} /> {item}</button>)}</nav>
