@@ -3,8 +3,8 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react
 import {
   ArrowDownCircle, ArrowUpCircle, Banknote, BookOpen, CalendarDays, CheckCircle2,
   Clock3, Download, Edit3, FileSpreadsheet, FileText, Landmark, LayoutDashboard,
-  Lock, Menu, NotebookPen, Plus, Printer, ReceiptText, Search, Settings, Tags,
-  Trash2, Upload, Users, WalletCards, X,
+  Lock, LogOut, Menu, Plus, ReceiptText, RefreshCw, Search, Settings, Tags,
+  Trash2, Upload, Users, WalletCards,
 } from 'lucide-react'
 import './App.css'
 
@@ -14,6 +14,14 @@ const navItems = [
   ['Dashboard', LayoutDashboard], ['Transactions', BookOpen], ['Categories', Tags],
   ['Parties/Vendors', Users], ['Settings', Settings], ['Backup', Download],
 ]
+const pageCopy = {
+  Dashboard: 'Business overview, account balances, and recent money movement.',
+  Transactions: 'Record income and expenses, filter the ledger, and manage dues.',
+  Categories: 'Organize income and expenses so reports stay easy to scan.',
+  'Parties/Vendors': 'Keep customers, vendors, staff, and other parties in one place.',
+  Settings: 'Manage accounts, reminders, and admin access.',
+  Backup: 'Create and review database backups.',
+}
 
 function currency(value) {
   return new Intl.NumberFormat('en-PK', { style: 'currency', currency: 'PKR', maximumFractionDigits: 0 }).format(Number(value || 0))
@@ -27,21 +35,8 @@ function emptyTransaction(type = 'income') {
   return { transaction_type: type, title: '', amount: '', category: '', account: '', party: '', payment_method: 'cash', reference_number: '', notes: '', date: new Date().toISOString().slice(0, 10), attachment: null }
 }
 
-function startOfPeriod(mode) {
-  const now = new Date()
-  const start = new Date(now)
-  start.setHours(0, 0, 0, 0)
-  if (mode === 'week') start.setDate(start.getDate() - start.getDay())
-  if (mode === 'month') start.setDate(1)
-  if (mode === 'year') {
-    start.setMonth(0)
-    start.setDate(1)
-  }
-  return start
-}
-
-function formatDateTime(value) {
-  return new Intl.DateTimeFormat('en-PK', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+function formatLabel(value) {
+  return String(value || '').replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
 }
 
 export default function App() {
@@ -54,6 +49,7 @@ export default function App() {
   const [message, setMessage] = useState('')
   const [data, setData] = useState({ dashboard: null, reports: null, accounts: [], categories: [], parties: [], transactions: [], dues: [], notes: [], backups: [] })
   const [filters, setFilters] = useState({ keyword: '', category: '', payment_method: '', start: '', end: '', min_amount: '', max_amount: '' })
+  const [appliedFilters, setAppliedFilters] = useState(filters)
   const [txForm, setTxForm] = useState(emptyTransaction())
   const [editingTx, setEditingTx] = useState(null)
 
@@ -66,14 +62,27 @@ export default function App() {
     })
     return instance
   }, [])
-  const incomeCategories = data.categories.filter((c) => c.category_type === 'income')
-  const expenseCategories = data.categories.filter((c) => c.category_type === 'expense')
+  const incomeCategories = useMemo(() => data.categories.filter((c) => c.category_type === 'income'), [data.categories])
+  const expenseCategories = useMemo(() => data.categories.filter((c) => c.category_type === 'expense'), [data.categories])
+  const activeCategories = txForm.transaction_type === 'income' ? incomeCategories : expenseCategories
+
+  useEffect(() => {
+    if (!txForm.account && data.accounts.length === 1) {
+      setTxForm((form) => ({ ...form, account: String(data.accounts[0].id) }))
+    }
+  }, [data.accounts, txForm.account])
+
+  useEffect(() => {
+    if (!txForm.category && activeCategories.length === 1) {
+      setTxForm((form) => ({ ...form, category: String(activeCategories[0].id) }))
+    }
+  }, [activeCategories, txForm.category])
 
   const loadAll = useCallback(async () => {
     if (!auth) return
     setLoading(true)
     try {
-      const query = new URLSearchParams(Object.entries(filters).filter(([, v]) => v)).toString()
+      const query = new URLSearchParams(Object.entries(appliedFilters).filter(([, v]) => v)).toString()
       const [dashboard, accounts, categories, parties, transactions, dues, notes, backups, reports] = await Promise.all([
         api.get('/dashboard/'), api.get('/accounts/'), api.get('/categories/'), api.get('/parties/'),
         api.get(`/transactions/${query ? `?${query}` : ''}`), api.get('/dues/'), api.get('/notes/'),
@@ -87,7 +96,7 @@ export default function App() {
     } finally {
       setLoading(false)
     }
-  }, [api, auth, filters])
+  }, [api, auth, appliedFilters])
 
   useEffect(() => {
     async function checkSession() {
@@ -106,6 +115,10 @@ export default function App() {
   }, [])
 
   useEffect(() => { loadAll() }, [loadAll])
+
+  function applyFilters() {
+    setAppliedFilters(filters)
+  }
 
   async function login(event) {
     event.preventDefault()
@@ -139,8 +152,7 @@ export default function App() {
         formData.append(key, value)
       }
     })
-    if (!formData.get('category')) formData.set('category', (txForm.transaction_type === 'income' ? incomeCategories[0] : expenseCategories[0])?.id || '')
-    if (!formData.get('account')) formData.set('account', data.accounts[0]?.id || '')
+    // Form will require category and account natively using 'required'
     try {
       if (editingTx) await api.patch(`/transactions/${editingTx.id}/`, formData)
       else await api.post('/transactions/', formData)
@@ -220,7 +232,7 @@ export default function App() {
   }
 
   async function downloadTransactionExport(type) {
-    const query = new URLSearchParams(Object.entries(filters).filter(([, v]) => v)).toString()
+    const query = new URLSearchParams(Object.entries(appliedFilters).filter(([, v]) => v)).toString()
     const response = await api.get(`/export/${type}/?${query}`, { responseType: 'blob' })
     const url = URL.createObjectURL(response.data)
     const link = document.createElement('a')
@@ -262,8 +274,8 @@ export default function App() {
     <main>
       <header className="topbar">
         <button className="iconButton" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu"><Menu /></button>
-        <div><p>{loading ? 'Loading backend data...' : `Logged in as ${auth.username}`}</p><h1>{active}</h1></div>
-        <div className="topActions"><button onClick={loadAll} title="Refresh"><CheckCircle2 size={18} /></button><button onClick={logout} title="Logout"><X size={18} /></button></div>
+        <div className="pageHeading"><p>{loading ? 'Syncing latest data...' : `Logged in as ${auth.username}`}</p><h1>{active}</h1><span>{pageCopy[active]}</span></div>
+        <div className="topActions"><button onClick={loadAll} title="Refresh"><RefreshCw size={18} /></button><button onClick={logout} title="Logout"><LogOut size={18} /></button></div>
       </header>
       {message && <div className="notice">{message}</div>}
 
@@ -288,9 +300,9 @@ export default function App() {
       {active === 'Transactions' && <>
         <section className="split">
           <Panel title={editingTx ? 'Edit transaction' : 'New income / expense'} icon={Plus}>
-            <TransactionForm form={txForm} setForm={setTxForm} save={saveTransaction} accounts={data.accounts} categories={txForm.transaction_type === 'income' ? incomeCategories : expenseCategories} parties={data.parties} editing={editingTx} cancel={() => { setEditingTx(null); setTxForm(emptyTransaction()) }} />
+            <TransactionForm form={txForm} setForm={setTxForm} save={saveTransaction} accounts={data.accounts} categories={activeCategories} parties={data.parties} editing={editingTx} cancel={() => { setEditingTx(null); setTxForm(emptyTransaction()) }} />
           </Panel>
-          <Ledger filters={filters} setFilters={setFilters} apply={loadAll} transactions={data.transactions} categories={data.categories} edit={editTransaction} remove={(id) => remove('transactions', id)} exportTx={downloadTransactionExport} />
+          <Ledger filters={filters} setFilters={setFilters} apply={applyFilters} transactions={data.transactions} categories={data.categories} edit={editTransaction} remove={(id) => remove('transactions', id)} exportTx={downloadTransactionExport} />
         </section>
         <section className="transactionDues">
           <DuesPanel dues={data.dues} parties={data.parties} save={saveSimple} remove={(id) => remove('dues', id)} />
@@ -305,86 +317,104 @@ export default function App() {
   </div>
 }
 
-function Metric({ icon: Icon, label, value, tone }) { return <div className={`metric ${tone}`}><Icon /><span>{label}</span><strong>{value}</strong></div> }
-function Panel({ title, icon: Icon, children }) { return <section className="panel"><div className="panelTitle"><Icon size={19} /><h2>{title}</h2></div>{children}</section> }
-function AccountList({ accounts }) { return <div className="accountList">{accounts.map((a) => <div key={a.id}><span>{a.name}<small>{a.account_type} - opening {currency(a.opening_balance)}</small></span><strong>{currency(a.current_balance)}</strong></div>)}</div> }
+function Metric({ icon: Icon, label, value, tone }) { return <div className={`metric ${tone}`}><div className="metricIcon"><Icon /></div><span>{label}</span><strong>{value}</strong></div> }
+function Panel({ title, icon: Icon, children, actions = null }) { return <section className="panel"><div className="panelTitle"><div><Icon size={19} /><h2>{title}</h2></div>{actions}</div>{children}</section> }
+function EmptyState({ title, body }) { return <div className="emptyState"><strong>{title}</strong><span>{body}</span></div> }
+function Field({ label, children, wide = false }) { return <label className={wide ? 'field wide' : 'field'}><span>{label}</span>{children}</label> }
+function IconButton({ children, tone = '', ...props }) { return <button className={`rowAction ${tone}`} type="button" {...props}>{children}</button> }
+function AccountList({ accounts }) {
+  if (!accounts.length) return <EmptyState title="No accounts yet" body="Add an account from Settings to start tracking balances." />
+  return <div className="accountList">{accounts.map((a) => <div key={a.id}><span>{a.name}<small>{formatLabel(a.account_type)} account - opening {currency(a.opening_balance)}</small></span><strong>{currency(a.current_balance)}</strong></div>)}</div>
+}
 
 function AccountReport({ accounts }) {
-  return <div className="tableWrap"><table className="accountReportTable"><thead><tr><th>Account</th><th>Type</th><th>Opening</th><th>Income</th><th>Expense</th><th>Current Balance</th></tr></thead><tbody>{accounts.map((account) => <tr key={account.id}><td><strong>{account.name}</strong></td><td>{account.account_type}</td><td>{currency(account.opening_balance)}</td><td>{currency(account.income)}</td><td>{currency(account.expense)}</td><td><strong>{currency(account.current_balance)}</strong></td></tr>)}</tbody></table></div>
+  if (!accounts.length) return <EmptyState title="No account report" body="Account totals will appear here after accounts are created." />
+  return <div className="tableWrap"><table className="accountReportTable"><thead><tr><th>Account</th><th>Type</th><th>Opening</th><th>Income</th><th>Expense</th><th>Current Balance</th></tr></thead><tbody>{accounts.map((account) => <tr key={account.id}><td><strong>{account.name}</strong></td><td><span className="pill">{formatLabel(account.account_type)}</span></td><td>{currency(account.opening_balance)}</td><td className="positive">{currency(account.income)}</td><td className="negative">{currency(account.expense)}</td><td><strong>{currency(account.current_balance)}</strong></td></tr>)}</tbody></table></div>
 }
 
 function DashboardActivity({ dashboard }) {
   const dues = dashboard?.pending_dues || []
   const transactions = dashboard?.recent_transactions || []
-  return <div className="activityGrid"><div><h3>Pending payments</h3>{dues.map((due) => <p key={due.id}><strong>{due.title}</strong><span>{due.due_type} - {currency(due.amount)} - {due.due_date}</span></p>)}</div><div><h3>Recent ledger</h3>{transactions.map((tx) => <p key={tx.id}><strong>{tx.title}</strong><span>{tx.transaction_type} - {tx.account_name} - {currency(tx.amount)}</span></p>)}</div></div>
+  return <div className="activityGrid"><div><h3>Pending payments</h3>{dues.length ? dues.map((due) => <p key={due.id}><strong>{due.title}</strong><span>{formatLabel(due.due_type)} - {currency(due.amount)} - {due.due_date}</span></p>) : <EmptyState title="No pending dues" body="Payables and receivables will show here." />}</div><div><h3>Recent ledger</h3>{transactions.length ? transactions.map((tx) => <p key={tx.id}><strong>{tx.title}</strong><span>{formatLabel(tx.transaction_type)} - {tx.account_name} - {currency(tx.amount)}</span></p>) : <EmptyState title="No recent transactions" body="New entries will appear in this activity list." />}</div></div>
 }
 
 function TransactionForm({ form, setForm, save, accounts, categories, parties, editing, cancel }) {
   return <form className="entryForm" onSubmit={save}>
-    <select value={form.transaction_type} onChange={(e) => setForm({ ...form, transaction_type: e.target.value, category: '' })}><option value="income">Income</option><option value="expense">Expense</option></select>
-    <input required placeholder="Source / vendor / title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-    <input required type="number" step="any" placeholder="Amount" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
-    <input required type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
-    <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>{categories.map((c) => <option value={c.id} key={c.id}>{c.name}</option>)}</select>
-    <select value={form.account} onChange={(e) => setForm({ ...form, account: e.target.value })}>{accounts.map((a) => <option value={a.id} key={a.id}>{a.name}</option>)}</select>
-    <select value={form.payment_method} onChange={(e) => setForm({ ...form, payment_method: e.target.value })}><option value="cash">Cash</option><option value="bank">Bank</option><option value="easypaisa">Easypaisa</option><option value="jazzcash">JazzCash</option><option value="cheque">Cheque</option></select>
-    <select value={form.party || ''} onChange={(e) => setForm({ ...form, party: e.target.value })}><option value="">No party</option>{parties.map((p) => <option value={p.id} key={p.id}>{p.name}</option>)}</select>
-    <input placeholder="Reference number" value={form.reference_number || ''} onChange={(e) => setForm({ ...form, reference_number: e.target.value })} />
-    <textarea placeholder="Notes" value={form.notes || ''} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-    <label className="upload"><Upload size={18} /> Receipt / invoice upload<input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp,application/pdf" onChange={(e) => setForm({ ...form, attachment: e.target.files[0] })} /></label>
-    <button className="primary"><CheckCircle2 size={18} /> {editing ? 'Update entry' : 'Save entry'}</button>
-    {editing && <button type="button" onClick={cancel}>Cancel edit</button>}
+    <div className="segmented">
+      {['income', 'expense'].map((type) => <button className={form.transaction_type === type ? 'active' : ''} key={type} type="button" onClick={() => setForm({ ...form, transaction_type: type, category: '' })}>{formatLabel(type)}</button>)}
+    </div>
+    <Field label="Title"><input required placeholder="Source, vendor, or detail" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
+    <div className="formTwo">
+      <Field label="Amount"><input required type="number" step="any" placeholder="0" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></Field>
+      <Field label="Date"><input required type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /></Field>
+    </div>
+    <Field label="Category"><select required value={form.category || ''} onChange={(e) => setForm({ ...form, category: e.target.value })}><option value="" disabled>{categories.length ? 'Select category' : 'No category available'}</option>{categories.map((c) => <option value={c.id} key={c.id}>{c.name}</option>)}</select>{categories.length === 0 && <small className="fieldHint">Create this type of category from Categories page.</small>}</Field>
+    <Field label="Account"><select required value={form.account || ''} onChange={(e) => setForm({ ...form, account: e.target.value })}><option value="" disabled>{accounts.length ? 'Select account' : 'No account available'}</option>{accounts.map((a) => <option value={a.id} key={a.id}>{a.name}</option>)}</select>{accounts.length === 1 && <small className="fieldHint">Only one account found, selected automatically.</small>}{accounts.length === 0 && <small className="fieldHint">Create an account from Settings page first.</small>}</Field>
+    <div className="formTwo">
+      <Field label="Payment"><select value={form.payment_method} onChange={(e) => setForm({ ...form, payment_method: e.target.value })}><option value="cash">Cash</option><option value="bank">Bank</option><option value="easypaisa">Easypaisa</option><option value="jazzcash">JazzCash</option><option value="cheque">Cheque</option></select></Field>
+      <Field label="Party"><select value={form.party || ''} onChange={(e) => setForm({ ...form, party: e.target.value })}><option value="">No party</option>{parties.map((p) => <option value={p.id} key={p.id}>{p.name}</option>)}</select></Field>
+    </div>
+    <Field label="Reference"><input placeholder="Invoice or payment reference" value={form.reference_number || ''} onChange={(e) => setForm({ ...form, reference_number: e.target.value })} /></Field>
+    <Field label="Notes"><textarea placeholder="Optional details" value={form.notes || ''} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
+    <label className="upload"><Upload size={18} /><span>Receipt / invoice upload</span><input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp,application/pdf" onChange={(e) => setForm({ ...form, attachment: e.target.files[0] })} /></label>
+    <div className="formActions"><button className="primary"><CheckCircle2 size={18} /> {editing ? 'Update entry' : 'Save entry'}</button>{editing && <button type="button" onClick={cancel}>Cancel</button>}</div>
   </form>
 }
 
 function Ledger({ filters, setFilters, apply, transactions, categories, edit, remove, exportTx }) {
-  return <Panel title="Ledger / account book" icon={ReceiptText}>
+  const totalCredit = transactions.reduce((sum, tx) => sum + (tx.transaction_type === 'income' ? Number(tx.amount) : 0), 0)
+  const totalDebit = transactions.reduce((sum, tx) => sum + (tx.transaction_type === 'expense' ? Number(tx.amount) : 0), 0)
+  return <Panel title="Ledger / account book" icon={ReceiptText} actions={<span className="panelMeta">{transactions.length} entries</span>}>
+    <div className="ledgerSummary"><span>Debit <strong className="negative">{currency(totalDebit)}</strong></span><span>Credit <strong className="positive">{currency(totalCredit)}</strong></span><span>Net <strong>{currency(totalCredit - totalDebit)}</strong></span></div>
     <div className="filters">
-      <label><Search size={16} /><input placeholder="Keyword search" value={filters.keyword} onChange={(e) => setFilters({ ...filters, keyword: e.target.value })} /></label>
+      <label className="searchField"><Search size={16} /><input placeholder="Search title, notes, party" value={filters.keyword} onChange={(e) => setFilters({ ...filters, keyword: e.target.value })} /></label>
       <select value={filters.category} onChange={(e) => setFilters({ ...filters, category: e.target.value })}><option value="">All categories</option>{categories.map((c) => <option value={c.id} key={c.id}>{c.name}</option>)}</select>
       <select value={filters.payment_method} onChange={(e) => setFilters({ ...filters, payment_method: e.target.value })}><option value="">All methods</option><option value="cash">Cash</option><option value="bank">Bank</option><option value="easypaisa">Easypaisa</option><option value="jazzcash">JazzCash</option></select>
-      <input type="date" value={filters.start} onChange={(e) => setFilters({ ...filters, start: e.target.value })} /><input type="date" value={filters.end} onChange={(e) => setFilters({ ...filters, end: e.target.value })} />
-      <button onClick={apply}>Apply</button>
+      <input aria-label="Start date" type="date" value={filters.start} onChange={(e) => setFilters({ ...filters, start: e.target.value })} /><input aria-label="End date" type="date" value={filters.end} onChange={(e) => setFilters({ ...filters, end: e.target.value })} />
+      <button className="primary" onClick={apply}>Apply</button>
     </div>
-    <div className="exportGrid" style={{ marginTop: '10px', marginBottom: '15px' }}>
+    <div className="exportGrid">
       <button onClick={() => exportTx('excel')}><FileSpreadsheet /> Excel export</button>
       <button onClick={() => exportTx('pdf')}><FileText /> PDF report</button>
     </div>
-    <div className="tableWrap"><table><thead><tr><th>Date</th><th>Details</th><th>Category</th><th>Debit</th><th>Credit</th><th>Proof</th><th>Action</th></tr></thead><tbody>{transactions.map((tx) => <tr key={tx.id}><td>{tx.date}</td><td><strong>{tx.title}</strong><small>{tx.party_name || 'No party'} - {tx.reference_number}</small></td><td>{tx.category_name}</td><td>{tx.transaction_type === 'expense' ? currency(tx.amount) : '-'}</td><td>{tx.transaction_type === 'income' ? currency(tx.amount) : '-'}</td><td>{tx.attachment ? <a href={tx.attachment} target="_blank" rel="noreferrer">Open</a> : '-'}</td><td><button onClick={() => edit(tx)}><Edit3 size={15} /></button><button onClick={() => remove(tx.id)}><Trash2 size={15} /></button></td></tr>)}</tbody></table></div>
+    {transactions.length ? <div className="tableWrap"><table><thead><tr><th>Date</th><th>Details</th><th>Category</th><th>Debit</th><th>Credit</th><th>Proof</th><th>Action</th></tr></thead><tbody>{transactions.map((tx) => <tr key={tx.id}><td>{tx.date}</td><td><strong>{tx.title}</strong><small>{tx.party_name || 'No party'}{tx.reference_number ? ` - ${tx.reference_number}` : ''}</small></td><td><span className="pill">{tx.category_name}</span></td><td className="negative">{tx.transaction_type === 'expense' ? currency(tx.amount) : '-'}</td><td className="positive">{tx.transaction_type === 'income' ? currency(tx.amount) : '-'}</td><td>{tx.attachment ? <a className="textLink" href={tx.attachment} target="_blank" rel="noreferrer">Open</a> : '-'}</td><td><div className="rowActions"><IconButton onClick={() => edit(tx)}><Edit3 size={15} /></IconButton><IconButton tone="danger" onClick={() => remove(tx.id)}><Trash2 size={15} /></IconButton></div></td></tr>)}</tbody></table></div> : <EmptyState title="No transactions found" body="Add a new entry or adjust filters to see ledger records." />}
   </Panel>
 }
 
 function CategoriesPanel({ categories, save, remove }) {
   const [form, setForm] = useState({ name: '', category_type: 'income', color: '#2563eb' })
-  return <Panel title="Categories management" icon={Tags}><form className="inlineForm" onSubmit={(e) => { e.preventDefault(); save('categories', form); setForm({ ...form, name: '' }) }}><input required placeholder="Category name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /><select value={form.category_type} onChange={(e) => setForm({ ...form, category_type: e.target.value })}><option value="income">Income</option><option value="expense">Expense</option></select><input type="color" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} /><button className="primary">Add</button></form><SimpleRows rows={categories.map((c) => [c.id, c.name, c.category_type, c.color])} remove={remove} /></Panel>
+  return <Panel title="Categories management" icon={Tags} actions={<span className="panelMeta">{categories.length} categories</span>}><form className="inlineForm" onSubmit={(e) => { e.preventDefault(); save('categories', form); setForm({ ...form, name: '' }) }}><Field label="Category name"><input required placeholder="Rent, Sales, Utilities" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field><Field label="Type"><select value={form.category_type} onChange={(e) => setForm({ ...form, category_type: e.target.value })}><option value="income">Income</option><option value="expense">Expense</option></select></Field><Field label="Color"><input type="color" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} /></Field><button className="primary">Add category</button></form><SimpleRows emptyTitle="No categories yet" emptyBody="Create income and expense categories to make reports useful." rows={categories.map((c) => [c.id, c.name, formatLabel(c.category_type), c.color])} remove={remove} /></Panel>
 }
 
 function PartiesPanel({ parties, save, remove }) {
   const [form, setForm] = useState({ name: '', party_type: 'customer', phone: '', email: '', address: '', notes: '' })
-  return <Panel title="Vendor and customer records" icon={Users}><form className="inlineForm" onSubmit={(e) => { e.preventDefault(); save('parties', form); setForm({ ...form, name: '', phone: '', email: '' }) }}><input required placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /><select value={form.party_type} onChange={(e) => setForm({ ...form, party_type: e.target.value })}><option value="customer">Customer</option><option value="vendor">Vendor</option><option value="staff">Staff</option><option value="other">Other</option></select><input placeholder="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /><button className="primary">Add</button></form><SimpleRows rows={parties.map((p) => [p.id, p.name, p.party_type, p.phone])} remove={remove} /></Panel>
+  return <Panel title="Vendor and customer records" icon={Users} actions={<span className="panelMeta">{parties.length} records</span>}><form className="inlineForm" onSubmit={(e) => { e.preventDefault(); save('parties', form); setForm({ ...form, name: '', phone: '', email: '' }) }}><Field label="Name"><input required placeholder="Customer or vendor name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field><Field label="Type"><select value={form.party_type} onChange={(e) => setForm({ ...form, party_type: e.target.value })}><option value="customer">Customer</option><option value="vendor">Vendor</option><option value="staff">Staff</option><option value="other">Other</option></select></Field><Field label="Phone"><input placeholder="03xx..." value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field><button className="primary">Add party</button></form><SimpleRows emptyTitle="No parties yet" emptyBody="Add customers, vendors, or staff to link them with transactions." rows={parties.map((p) => [p.id, p.name, formatLabel(p.party_type), p.phone])} remove={remove} /></Panel>
 }
 
 function DuesPanel({ dues, parties, save, remove }) {
   const [form, setForm] = useState({ title: '', due_type: 'payable', amount: '', due_date: new Date().toISOString().slice(0, 10), status: 'pending', party: '' })
-  return <Panel title="Due payments" icon={Clock3}><form className="inlineForm" onSubmit={(e) => { e.preventDefault(); save('dues', form); setForm({ ...form, title: '', amount: '' }) }}><input required placeholder="Due title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /><select value={form.due_type} onChange={(e) => setForm({ ...form, due_type: e.target.value })}><option value="payable">Payable</option><option value="receivable">Receivable</option></select><input required type="number" step="any" placeholder="Amount" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /><input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} /><select value={form.party} onChange={(e) => setForm({ ...form, party: e.target.value })}><option value="">No party</option>{parties.map((p) => <option value={p.id} key={p.id}>{p.name}</option>)}</select><button className="primary">Add</button></form><div className="dueList">{dues.map((d) => <div key={d.id}><span>{d.title}<small>{d.party_name || 'No party'} - {d.due_date} - {d.status}</small></span><strong>{currency(d.amount)}</strong><button onClick={() => remove(d.id)}><Trash2 size={15} /></button></div>)}</div></Panel>
+  return <Panel title="Due payments" icon={Clock3} actions={<span className="panelMeta">{dues.length} pending items</span>}><form className="inlineForm duesForm" onSubmit={(e) => { e.preventDefault(); save('dues', form); setForm({ ...form, title: '', amount: '' }) }}><Field label="Title"><input required placeholder="Payment detail" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field><Field label="Type"><select value={form.due_type} onChange={(e) => setForm({ ...form, due_type: e.target.value })}><option value="payable">Payable</option><option value="receivable">Receivable</option></select></Field><Field label="Amount"><input required type="number" step="any" placeholder="0" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></Field><Field label="Due date"><input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} /></Field><Field label="Party"><select value={form.party} onChange={(e) => setForm({ ...form, party: e.target.value })}><option value="">No party</option>{parties.map((p) => <option value={p.id} key={p.id}>{p.name}</option>)}</select></Field><button className="primary">Add due</button></form>{dues.length ? <div className="dueList">{dues.map((d) => <div key={d.id}><span>{d.title}<small>{d.party_name || 'No party'} - {d.due_date} - {formatLabel(d.status)}</small></span><strong>{currency(d.amount)}</strong><IconButton tone="danger" onClick={() => remove(d.id)}><Trash2 size={15} /></IconButton></div>)}</div> : <EmptyState title="No due payments" body="Payables and receivables will appear here." />}</Panel>
 }
 
 function SettingsPanel({ accounts, notes, save, remove, changePassword }) {
   const [note, setNote] = useState({ title: '', body: '', reminder_date: '' })
   const [account, setAccount] = useState({ name: '', account_type: 'cash', opening_balance: 0, is_active: true })
   return <Panel title="Admin login and settings" icon={Settings}>
-    <form className="inlineForm" onSubmit={changePassword}><input required type="password" name="old_password" placeholder="Old password" /><input required type="password" name="new_password" placeholder="New password" /><button className="primary">Change password</button></form>
-    <form className="inlineForm" onSubmit={(e) => { e.preventDefault(); save('accounts', account); setAccount({ ...account, name: '', opening_balance: 0 }) }}><input required placeholder="Account name" value={account.name} onChange={(e) => setAccount({ ...account, name: e.target.value })} /><select value={account.account_type} onChange={(e) => setAccount({ ...account, account_type: e.target.value })}><option value="cash">Cash</option><option value="bank">Bank</option><option value="easypaisa">Easypaisa</option><option value="jazzcash">JazzCash</option></select><input type="number" step="any" placeholder="Opening balance" value={account.opening_balance} onChange={(e) => setAccount({ ...account, opening_balance: e.target.value })} /><button className="primary">Add account</button></form>
-    <form className="inlineForm" onSubmit={(e) => { e.preventDefault(); save('notes', note); setNote({ title: '', body: '', reminder_date: '' }) }}><input required placeholder="Note title" value={note.title} onChange={(e) => setNote({ ...note, title: e.target.value })} /><input required placeholder="Reminder note" value={note.body} onChange={(e) => setNote({ ...note, body: e.target.value })} /><input type="date" value={note.reminder_date} onChange={(e) => setNote({ ...note, reminder_date: e.target.value })} /><button className="primary">Add note</button></form>
-    <SimpleRows rows={accounts.map((a) => [a.id, a.name, a.account_type, currency(a.current_balance)])} remove={(id) => remove('accounts', id)} />
-    <SimpleRows rows={notes.map((n) => [n.id, n.title, n.body, n.reminder_date])} remove={(id) => remove('notes', id)} />
+    <div className="settingsStack">
+      <form className="inlineForm" onSubmit={changePassword}><Field label="Old password"><input required type="password" name="old_password" placeholder="Current password" /></Field><Field label="New password"><input required type="password" name="new_password" placeholder="New secure password" /></Field><button className="primary">Change password</button></form>
+      <form className="inlineForm" onSubmit={(e) => { e.preventDefault(); save('accounts', account); setAccount({ ...account, name: '', opening_balance: 0 }) }}><Field label="Account name"><input required placeholder="Cash counter, Bank account" value={account.name} onChange={(e) => setAccount({ ...account, name: e.target.value })} /></Field><Field label="Type"><select value={account.account_type} onChange={(e) => setAccount({ ...account, account_type: e.target.value })}><option value="cash">Cash</option><option value="bank">Bank</option><option value="easypaisa">Easypaisa</option><option value="jazzcash">JazzCash</option></select></Field><Field label="Opening balance"><input type="number" step="any" placeholder="0" value={account.opening_balance} onChange={(e) => setAccount({ ...account, opening_balance: e.target.value })} /></Field><button className="primary">Add account</button></form>
+      <form className="inlineForm" onSubmit={(e) => { e.preventDefault(); save('notes', note); setNote({ title: '', body: '', reminder_date: '' }) }}><Field label="Note title"><input required placeholder="Reminder title" value={note.title} onChange={(e) => setNote({ ...note, title: e.target.value })} /></Field><Field label="Note"><input required placeholder="Reminder detail" value={note.body} onChange={(e) => setNote({ ...note, body: e.target.value })} /></Field><Field label="Reminder date"><input type="date" value={note.reminder_date} onChange={(e) => setNote({ ...note, reminder_date: e.target.value })} /></Field><button className="primary">Add note</button></form>
+    </div>
+    <h3 className="sectionLabel">Accounts</h3><SimpleRows emptyTitle="No accounts yet" emptyBody="Add an account to begin tracking balances." rows={accounts.map((a) => [a.id, a.name, formatLabel(a.account_type), currency(a.current_balance)])} remove={(id) => remove('accounts', id)} />
+    <h3 className="sectionLabel">Notes</h3><SimpleRows emptyTitle="No notes yet" emptyBody="Create reminders for follow-ups or payments." rows={notes.map((n) => [n.id, n.title, n.body, n.reminder_date])} remove={(id) => remove('notes', id)} />
   </Panel>
 }
 
 function BackupPanel({ backups, createBackup }) {
-  return <Panel title="Backup system" icon={Download}><div className="backupBox"><p>Manual backup creates a copy of SQLite database and stores record in backend.</p><button className="primary" onClick={createBackup}><Download size={18} /> Create manual backup</button></div><SimpleRows rows={backups.map((b) => [b.id, b.backup_type, b.file, b.created_at])} /></Panel>
+  return <Panel title="Backup system" icon={Download} actions={<span className="panelMeta">{backups.length} backups</span>}><div className="backupBox"><div><strong>Database backup</strong><p>Create a fresh copy before major edits or at the end of the day.</p></div><button className="primary" onClick={createBackup}><Download size={18} /> Create backup</button></div><SimpleRows emptyTitle="No backups yet" emptyBody="Created backups will be listed here." rows={backups.map((b) => [b.id, formatLabel(b.backup_type), b.file, b.created_at])} /></Panel>
 }
 
-function SimpleRows({ rows, remove }) {
-  return <div className="simpleList">{rows.map((row) => <div key={row[0]}>{row.slice(1).map((cell) => <span key={cell}>{cell || '-'}</span>)}{remove && <button onClick={() => remove(row[0])}><Trash2 size={15} /></button>}</div>)}</div>
+function SimpleRows({ rows, remove, emptyTitle = 'No records', emptyBody = 'Records will appear here.' }) {
+  if (!rows.length) return <EmptyState title={emptyTitle} body={emptyBody} />
+  return <div className="simpleList">{rows.map((row) => <div key={row[0]}>{row.slice(1).map((cell) => <span key={cell}>{cell || '-'}</span>)}{remove && <IconButton tone="danger" onClick={() => remove(row[0])}><Trash2 size={15} /></IconButton>}</div>)}</div>
 }
