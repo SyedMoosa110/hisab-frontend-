@@ -394,13 +394,25 @@ export default function App() {
   return <div className="app">
     {menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)} />}
     <aside className={menuOpen ? 'sidebar open' : 'sidebar'}>
-      <div className="brand"><div className="brandMark"><Landmark size={22} /></div><div><strong>HisabPro</strong><span>Account Department</span></div></div>
+      <div className="brand">
+        <div className="brandMark"><Landmark size={22} /></div>
+        <div>
+          <strong>{auth?.company_name || 'HisabPro'}</strong>
+          <span style={{ textTransform: 'capitalize' }}>
+            {auth?.role ? `${auth.role} Workspace` : 'Account Department'}
+          </span>
+        </div>
+      </div>
       <nav>{navItems.map(([item, Icon]) => <button className={active === item ? 'active' : ''} key={item} onClick={() => { setActive(item); setMenuOpen(false) }}><Icon size={18} /> {item}</button>)}</nav>
     </aside>
     <main>
       <header className="topbar">
         <button className="iconButton" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu"><Menu /></button>
-        <div className="pageHeading"><p>{loading ? 'Syncing latest data...' : `Logged in as ${auth.username}`}</p><h1>{active}</h1><span>{pageCopy[active]}</span></div>
+        <div className="pageHeading">
+          <p>{loading ? 'Syncing latest data...' : `Logged in as ${auth.username}`}</p>
+          <h1>{active} | {auth?.company_name || 'Workspace'}</h1>
+          <span>{pageCopy[active]}</span>
+        </div>
         <div className="topActions"><button onClick={() => loadActivePage(true)} title="Refresh"><RefreshCw size={18} /></button><button onClick={logout} title="Logout"><LogOut size={18} /></button></div>
       </header>
       {message && <div className="notice">{message}</div>}
