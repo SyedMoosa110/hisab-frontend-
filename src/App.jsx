@@ -409,7 +409,7 @@ export default function App() {
       <header className="topbar">
         <button className="iconButton" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu"><Menu /></button>
         <div className="pageHeading">
-          <p>{loading ? 'Syncing latest data...' : `Logged in as ${auth.username}`}</p>
+          <p>{loading ? 'Syncing latest data...' : `Logged in as ${auth?.owner_name || auth?.username} | ${auth?.company_name || 'Workspace'}`}</p>
           <h1>{active} | {auth?.company_name || 'Workspace'}</h1>
           <span>{pageCopy[active]}</span>
         </div>
