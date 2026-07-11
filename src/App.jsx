@@ -557,6 +557,10 @@ function Ledger({ filters, setFilters, apply, transactions, categories, edit, re
         <Upload size={16} /> Import Excel
         <input type="file" accept=".xlsx" onChange={(e) => importTx(e.target.files[0])} style={{ display: 'none' }} />
       </label>
+      <label className="importLabel">
+        <Upload size={16} /> Import PDF
+        <input type="file" accept=".pdf" onChange={(e) => importTx(e.target.files[0])} style={{ display: 'none' }} />
+      </label>
     </div>
     {transactions.length ? <div className="tableWrap"><table><thead><tr><th>Date</th><th>Details</th><th>Category</th><th>Debit</th><th>Credit</th><th>Proof</th><th>Action</th></tr></thead><tbody>{transactions.map((tx) => <tr key={tx.id}><td>{tx.date}</td><td><strong>{tx.title}</strong><small>{tx.party_name || 'No party'}{tx.reference_number ? ` - ${tx.reference_number}` : ''}</small></td><td><span className="pill">{tx.category_name}</span></td><td className="negative">{tx.transaction_type === 'expense' ? currency(tx.amount) : '-'}</td><td className="positive">{tx.transaction_type === 'income' ? currency(tx.amount) : '-'}</td><td>{tx.attachment ? <a className="textLink" href={tx.attachment} target="_blank" rel="noreferrer">Open</a> : '-'}</td><td><div className="rowActions"><IconButton onClick={() => edit(tx)}><Edit3 size={15} /></IconButton><IconButton tone="danger" onClick={() => remove(tx.id)}><Trash2 size={15} /></IconButton></div></td></tr>)}</tbody></table></div> : <EmptyState title="No transactions found" body="Add a new entry or adjust filters to see ledger records." />}
   </Panel>
@@ -809,6 +813,10 @@ function SalesPanel({ sales, stock, accounts, save, remove, exportSales, importS
             <label className="importLabel">
               <Upload size={16} /> Import Excel
               <input type="file" accept=".xlsx" onChange={(e) => importSales(e.target.files[0])} style={{ display: 'none' }} />
+            </label>
+            <label className="importLabel">
+              <Upload size={16} /> Import PDF
+              <input type="file" accept=".pdf" onChange={(e) => importSales(e.target.files[0])} style={{ display: 'none' }} />
             </label>
           </div>
           {sales.length ? (
