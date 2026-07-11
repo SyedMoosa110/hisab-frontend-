@@ -375,6 +375,33 @@ export default function App() {
     }
   }
 
+  async function downloadStockExport(type) {
+    const response = await api.get(`/export-stock/${type}/`, { responseType: 'blob' })
+    const url = URL.createObjectURL(response.data)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = type === 'excel' ? 'stock-inventory.xlsx' : 'stock-inventory.pdf'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  async function importStock(file) {
+    if (!file) return
+    const formData = new FormData()
+    formData.append('file', file)
+    try {
+      await prepareCsrf()
+      await api.post('/import/stock/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      setLoaded((current) => ({ ...current, Dashboard: false, Sales: false, Stock: false }))
+      await loadActivePage(true)
+      setMessage('Stock imported successfully.')
+    } catch (error) {
+      setMessage(error.response?.data?.detail || 'Stock import failed.')
+    }
+  }
+
 
   const chartData = (data.reports?.by_date || []).reduce((rows, row) => {
     const label = String(row.date)
@@ -487,7 +514,7 @@ export default function App() {
       {active === 'Categories' && <CategoriesPanel categories={data.categories} save={saveSimple} remove={(id) => remove('categories', id)} />}
       {active === 'Parties/Vendors' && <PartiesPanel parties={data.parties} save={saveSimple} remove={(id) => remove('parties', id)} />}
       {active === 'Sales' && <SalesPanel sales={data.sales} stock={data.stock} accounts={data.accounts} save={saveSimple} remove={(id) => remove('sales', id)} exportSales={downloadSalesExport} importSales={importSales} />}
-      {active === 'Stock' && <StockPanel stock={data.stock} save={saveSimple} remove={(id) => remove('stock', id)} />}
+      {active === 'Stock' && <StockPanel stock={data.stock} save={saveSimple} remove={(id) => remove('stock', id)} exportStock={downloadStockExport} importStock={importStock} />}
       {active === 'Settings' && <SettingsPanel accounts={data.accounts} notes={data.notes} save={saveSimple} remove={remove} changePassword={changePassword} />}
       {active === 'Backup' && <BackupPanel backups={data.backups} createBackup={createBackup} />}
     </main>
@@ -604,7 +631,7 @@ function SimpleRows({ rows, remove, emptyTitle = 'No records', emptyBody = 'Reco
   return <div className="simpleList">{rows.map((row) => <div key={row[0]}>{row.slice(1).map((cell) => <span key={cell}>{cell || '-'}</span>)}{remove && <IconButton tone="danger" onClick={() => remove(row[0])}><Trash2 size={15} /></IconButton>}</div>)}</div>
 }
 
-function StockPanel({ stock, save, remove }) {
+function StockPanel({ stock, save, remove, exportStock, importStock }) {
   const [form, setForm] = useState({ name: '', quantity: '', unit_price: '' })
   const [editing, setEditing] = useState(null)
 
@@ -645,6 +672,18 @@ function StockPanel({ stock, save, remove }) {
 
       <div style={{ marginTop: '20px' }}>
         <Panel title="Stock Inventory Status" icon={Package} actions={<span className="panelMeta">{stock.length} items</span>}>
+          <div className="exportGrid">
+            <button onClick={() => exportStock('excel')}><FileSpreadsheet /> Excel export</button>
+            <button onClick={() => exportStock('pdf')}><FileText /> PDF report</button>
+            <label className="importLabel">
+              <Upload size={16} /> Import Excel
+              <input type="file" accept=".xlsx" onChange={(e) => importStock(e.target.files[0])} style={{ display: 'none' }} />
+            </label>
+            <label className="importLabel">
+              <Upload size={16} /> Import PDF
+              <input type="file" accept=".pdf" onChange={(e) => importStock(e.target.files[0])} style={{ display: 'none' }} />
+            </label>
+          </div>
           {stock.length ? (
             <div className="tableWrap">
               <table>
