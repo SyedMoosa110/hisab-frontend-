@@ -358,7 +358,7 @@ export default function App() {
     if (isRegistering) {
       return <main className="loginPage">
         <form className="loginBox" onSubmit={register}>
-          <div className="brand center"><div className="brandMark"><Landmark /></div><div><strong>HisabPro</strong><span>Create Account</span></div></div>
+          <div className="brand center"><div className="brandMark"><Landmark /></div><div><strong>LedgerPro</strong><span>Create Account</span></div></div>
           <input required value={registerForm.business_name} onChange={(e) => setRegisterForm({ ...registerForm, business_name: e.target.value })} placeholder="Company or Business Name" />
           <input required value={registerForm.owner_name} onChange={(e) => setRegisterForm({ ...registerForm, owner_name: e.target.value })} placeholder="Owner Name" />
           <input required type="email" value={registerForm.email} onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })} placeholder="Email Address" />
@@ -377,7 +377,7 @@ export default function App() {
 
     return <main className="loginPage">
       <form className="loginBox" onSubmit={login}>
-        <div className="brand center"><div className="brandMark"><Landmark /></div><div><strong>HisabPro</strong><span>Admin Login</span></div></div>
+        <div className="brand center"><div className="brandMark"><Landmark /></div><div><strong>LedgerPro</strong><span>Admin Login</span></div></div>
         <input value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })} placeholder="Email, Username or Business Name" />
         <input type="password" value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} placeholder="Password" />
         <button className="primary"><Lock size={18} /> Login</button>
@@ -397,7 +397,7 @@ export default function App() {
       <div className="brand">
         <div className="brandMark"><Landmark size={22} /></div>
         <div>
-          <strong>{auth?.company_name || 'HisabPro'}</strong>
+          <strong>{auth?.company_name || 'LedgerPro'}</strong>
           <span style={{ textTransform: 'capitalize' }}>
             {auth?.role ? `${auth.role} Workspace` : 'Account Department'}
           </span>
@@ -419,7 +419,7 @@ export default function App() {
 
       {active === 'Dashboard' && <>
         <div className="dashboard-brand-header">
-          <h2>{auth?.company_name || 'Workspace'} Ka Hisab Dashboard</h2>
+          <h2>{auth?.company_name || 'Workspace'} Ledger Dashboard</h2>
         </div>
         <section className="statsGrid">
           <Metric icon={WalletCards} label="Current balance" value={currency(totals.current_balance)} tone="blue" />
@@ -778,7 +778,7 @@ function SalesPanel({ sales, stock, accounts, save, remove, exportSales }) {
             <div className="invoice-header">
               <div className="invoice-brand">
                 <Landmark size={28} />
-                <h2>HisabPro</h2>
+                <h2>LedgerPro</h2>
               </div>
               <div className="invoice-meta">
                 <h3>INVOICE</h3>
