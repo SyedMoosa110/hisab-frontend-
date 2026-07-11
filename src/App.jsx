@@ -651,15 +651,36 @@ function StockPanel({ stock, save, remove }) {
 }
 
 function SalesPanel({ sales, stock, accounts, save, remove, exportSales }) {
-  const [form, setForm] = useState({ stock: '', quantity: '', sale_price: '', date: new Date().toISOString().slice(0, 10), account: '', notes: '' })
+  const [form, setForm] = useState({ stock: '', quantity: '', sale_price: '', date: new Date().toISOString().slice(0, 10), account: '', notes: '', customer_name: '', customer_phone: '', customer_address: '' })
   const [editing, setEditing] = useState(null)
   const [activeInvoice, setActiveInvoice] = useState(null)
 
   useEffect(() => {
     if (editing) {
-      setForm({ stock: String(editing.stock), quantity: editing.quantity, sale_price: editing.sale_price, date: editing.date, account: String(editing.account), notes: editing.notes, id: editing.id })
+      setForm({
+        stock: String(editing.stock),
+        quantity: editing.quantity,
+        sale_price: editing.sale_price,
+        date: editing.date,
+        account: String(editing.account),
+        notes: editing.notes || '',
+        customer_name: editing.customer_name || '',
+        customer_phone: editing.customer_phone || '',
+        customer_address: editing.customer_address || '',
+        id: editing.id
+      })
     } else {
-      setForm({ stock: '', quantity: '', sale_price: '', date: new Date().toISOString().slice(0, 10), account: accounts.length ? String(accounts[0].id) : '', notes: '' })
+      setForm({
+        stock: '',
+        quantity: '',
+        sale_price: '',
+        date: new Date().toISOString().slice(0, 10),
+        account: accounts.length ? String(accounts[0].id) : '',
+        notes: '',
+        customer_name: '',
+        customer_phone: '',
+        customer_address: ''
+      })
     }
   }, [editing, accounts])
 
@@ -667,7 +688,17 @@ function SalesPanel({ sales, stock, accounts, save, remove, exportSales }) {
     e.preventDefault()
     save('sales', form)
     setEditing(null)
-    setForm({ stock: '', quantity: '', sale_price: '', date: new Date().toISOString().slice(0, 10), account: accounts.length ? String(accounts[0].id) : '', notes: '' })
+    setForm({
+      stock: '',
+      quantity: '',
+      sale_price: '',
+      date: new Date().toISOString().slice(0, 10),
+      account: accounts.length ? String(accounts[0].id) : '',
+      notes: '',
+      customer_name: '',
+      customer_phone: '',
+      customer_address: ''
+    })
   }
 
   const handleStockChange = (e) => {
@@ -713,6 +744,15 @@ function SalesPanel({ sales, stock, accounts, save, remove, exportSales }) {
           <Field label="Date">
             <input required type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
           </Field>
+          <Field label="Customer Name">
+            <input placeholder="Walk-in Customer" value={form.customer_name} onChange={(e) => setForm({ ...form, customer_name: e.target.value })} />
+          </Field>
+          <Field label="Customer Phone">
+            <input placeholder="Customer phone number" value={form.customer_phone} onChange={(e) => setForm({ ...form, customer_phone: e.target.value })} />
+          </Field>
+          <Field label="Customer Address">
+            <input placeholder="Customer address" value={form.customer_address} onChange={(e) => setForm({ ...form, customer_address: e.target.value })} />
+          </Field>
           <Field label="Notes">
             <input placeholder="Optional sale comments" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </Field>
@@ -736,6 +776,7 @@ function SalesPanel({ sales, stock, accounts, save, remove, exportSales }) {
                   <tr>
                     <th>Date</th>
                     <th>Stock Item</th>
+                    <th>Customer</th>
                     <th>Quantity</th>
                     <th>Sale Price</th>
                     <th>Total Price</th>
@@ -749,6 +790,16 @@ function SalesPanel({ sales, stock, accounts, save, remove, exportSales }) {
                     <tr key={sale.id}>
                       <td>{sale.date}</td>
                       <td><strong>{sale.stock_name}</strong></td>
+                      <td>
+                        {sale.customer_name ? (
+                          <div>
+                            <strong>{sale.customer_name}</strong>
+                            {sale.customer_phone && <small style={{ display: 'block', color: '#64748b', marginTop: '2px' }}>{sale.customer_phone}</small>}
+                          </div>
+                        ) : (
+                          <span style={{ color: '#94a3b8' }}>Walk-in</span>
+                        )}
+                      </td>
                       <td>{sale.quantity}</td>
                       <td>{currency(sale.sale_price)}</td>
                       <td><strong className="positive">{currency(sale.total_price)}</strong></td>
@@ -790,7 +841,15 @@ function SalesPanel({ sales, stock, accounts, save, remove, exportSales }) {
             <div className="invoice-body">
               <div className="invoice-bill-to">
                 <h4>Bill To:</h4>
-                <p>Walk-in Customer</p>
+                {activeInvoice.customer_name ? (
+                  <div style={{ display: 'grid', gap: '3px', fontSize: '14px', color: '#1e293b' }}>
+                    <p style={{ margin: 0 }}><strong>Name:</strong> {activeInvoice.customer_name}</p>
+                    {activeInvoice.customer_phone && <p style={{ margin: 0 }}><strong>Phone:</strong> {activeInvoice.customer_phone}</p>}
+                    {activeInvoice.customer_address && <p style={{ margin: 0 }}><strong>Address:</strong> {activeInvoice.customer_address}</p>}
+                  </div>
+                ) : (
+                  <p>Walk-in Customer</p>
+                )}
                 {activeInvoice.notes && <p style={{ marginTop: '8px' }}><strong>Notes:</strong> {activeInvoice.notes}</p>}
               </div>
               
