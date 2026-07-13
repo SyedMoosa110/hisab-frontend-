@@ -13,7 +13,7 @@ const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
 const navItems = [
   ['Dashboard', LayoutDashboard], ['Transactions', BookOpen], ['Categories', Tags],
   ['Parties/Vendors', Users], ['Sales', ShoppingCart], ['Stock', Package],
-  ['Backup Settings', Cloud], ['Settings', Settings],
+  ['Backup', Cloud], ['Settings', Settings],
 ]
 const pageCopy = {
   Dashboard: 'Business overview, account balances, and recent money movement.',
@@ -22,7 +22,7 @@ const pageCopy = {
   'Parties/Vendors': 'Keep customers, vendors, staff, and other parties in one place.',
   Sales: 'Track product sales, record custom sales, and manage sales revenue.',
   Stock: 'Monitor inventory levels, view total, sold, and remaining stock.',
-  'Backup Settings': 'Secure your financial records, transactions, and settings automatically to your Google Drive.',
+  Backup: 'Secure your financial records, transactions, and settings automatically to your Google Drive.',
   Settings: 'Manage accounts, reminders, and admin access.',
 }
 
@@ -210,7 +210,7 @@ export default function App() {
   }, [themeStyle, customColors])
 
   const [data, setData] = useState({ dashboard: null, reports: null, accounts: [], categories: [], parties: [], transactions: [], dues: [], notes: [], sales: [], stock: [], backupSettings: null, backupHistory: [] })
-  const [loaded, setLoaded] = useState({ refs: false, Dashboard: false, Transactions: false, Categories: false, 'Parties/Vendors': false, Settings: false, Sales: false, Stock: false, 'Backup Settings': false })
+  const [loaded, setLoaded] = useState({ refs: false, Dashboard: false, Transactions: false, Categories: false, 'Parties/Vendors': false, Settings: false, Sales: false, Stock: false, Backup: false })
   const [filters, setFilters] = useState({ keyword: '', category: '', payment_method: '', start: '', end: '', min_amount: '', max_amount: '' })
   const [appliedFilters, setAppliedFilters] = useState(filters)
   const [txForm, setTxForm] = useState(emptyTransaction())
@@ -302,7 +302,7 @@ export default function App() {
         const stock = await api.get('/stock/')
         mergeData({ stock: stock.data })
       }
-      if (active === 'Backup Settings') {
+      if (active === 'Backup') {
         const [settingsRes, historyRes] = await Promise.all([
           api.get('/backup/settings/'),
           api.get('/backup/history/')
@@ -342,7 +342,7 @@ export default function App() {
     const hasBackupPath = window.location.pathname.includes('/backup')
 
     if (hasBackupPath || authStatus || errorStatus) {
-      setActive('Backup Settings')
+      setActive('Backup')
       if (authStatus === 'success') {
         setMessage('Google Drive connected successfully!')
       } else if (errorStatus) {
@@ -678,7 +678,7 @@ export default function App() {
       {active === 'Parties/Vendors' && <PartiesPanel parties={data.parties} save={saveSimple} remove={(id) => remove('parties', id)} />}
       {active === 'Sales' && <SalesPanel sales={data.sales} stock={data.stock} accounts={data.accounts} save={saveSimple} remove={(id) => remove('sales', id)} exportSales={downloadSalesExport} importSales={importSales} />}
       {active === 'Stock' && <StockPanel stock={data.stock} save={saveSimple} remove={(id) => remove('stock', id)} exportStock={downloadStockExport} importStock={importStock} />}
-      {active === 'Backup Settings' && <BackupPanel settings={data.backupSettings} history={data.backupHistory} api={api} onRefresh={() => loadActivePage(true)} setMessage={setMessage} />}
+      {active === 'Backup' && <BackupPanel settings={data.backupSettings} history={data.backupHistory} api={api} onRefresh={() => loadActivePage(true)} setMessage={setMessage} />}
       {active === 'Settings' && <SettingsPanel accounts={data.accounts} notes={data.notes} save={saveSimple} remove={remove} changePassword={changePassword} themeStyle={themeStyle} setThemeStyle={setThemeStyle} customColors={customColors} setCustomColors={setCustomColors} />}
     </main>
   </div>
