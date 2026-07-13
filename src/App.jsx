@@ -1,10 +1,10 @@
 import axios from 'axios'
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  ArrowDownCircle, ArrowUpCircle, Banknote, BookOpen, CalendarDays, CheckCircle2,
+  ArrowDownCircle, ArrowUpCircle, Banknote, BookOpen, CalendarDays,
   Clock3, Download, Edit3, FileSpreadsheet, FileText, Landmark, LayoutDashboard,
   Lock, LogOut, Menu, Plus, ReceiptText, RefreshCw, Search, Settings, Tags,
-  Trash2, Upload, Users, WalletCards, ShoppingCart, Package, Printer, Cloud,
+  Trash2, Upload, Users, WalletCards, ShoppingCart, Package, Printer,
 } from 'lucide-react'
 import './App.css'
 
@@ -13,7 +13,7 @@ const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
 const navItems = [
   ['Dashboard', LayoutDashboard], ['Transactions', BookOpen], ['Categories', Tags],
   ['Parties/Vendors', Users], ['Sales', ShoppingCart], ['Stock', Package],
-  ['Backup', Cloud], ['Settings', Settings],
+  ['Settings', Settings],
 ]
 const pageCopy = {
   Dashboard: 'Business overview, account balances, and recent money movement.',
@@ -22,7 +22,6 @@ const pageCopy = {
   'Parties/Vendors': 'Keep customers, vendors, staff, and other parties in one place.',
   Sales: 'Track product sales, record custom sales, and manage sales revenue.',
   Stock: 'Monitor inventory levels, view total, sold, and remaining stock.',
-  Backup: 'Secure your financial records, transactions, and settings automatically to your Google Drive.',
   Settings: 'Manage accounts, reminders, and admin access.',
 }
 
@@ -209,8 +208,8 @@ export default function App() {
     }
   }, [themeStyle, customColors])
 
-  const [data, setData] = useState({ dashboard: null, reports: null, accounts: [], categories: [], parties: [], transactions: [], dues: [], notes: [], sales: [], stock: [], backupSettings: null, backupHistory: [] })
-  const [loaded, setLoaded] = useState({ refs: false, Dashboard: false, Transactions: false, Categories: false, 'Parties/Vendors': false, Settings: false, Sales: false, Stock: false, Backup: false })
+  const [data, setData] = useState({ dashboard: null, reports: null, accounts: [], categories: [], parties: [], transactions: [], dues: [], notes: [], sales: [], stock: [] })
+  const [loaded, setLoaded] = useState({ refs: false, Dashboard: false, Transactions: false, Categories: false, 'Parties/Vendors': false, Settings: false, Sales: false, Stock: false })
   const [filters, setFilters] = useState({ keyword: '', category: '', payment_method: '', start: '', end: '', min_amount: '', max_amount: '' })
   const [appliedFilters, setAppliedFilters] = useState(filters)
   const [txForm, setTxForm] = useState(emptyTransaction())
@@ -302,13 +301,7 @@ export default function App() {
         const stock = await api.get('/stock/')
         mergeData({ stock: stock.data })
       }
-      if (active === 'Backup') {
-        const [settingsRes, historyRes] = await Promise.all([
-          api.get('/backup/settings/'),
-          api.get('/backup/history/')
-        ])
-        mergeData({ backupSettings: settingsRes.data, backupHistory: historyRes.data })
-      }
+
       setLoaded((current) => ({ ...current, [active]: true }))
       setMessage('')
     } catch (error) {
@@ -335,23 +328,6 @@ export default function App() {
     checkSession()
   }, [])
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const authStatus = params.get('auth')
-    const errorStatus = params.get('error')
-    const hasBackupPath = window.location.pathname.includes('/backup')
-
-    if (hasBackupPath || authStatus || errorStatus) {
-      setActive('Backup')
-      if (authStatus === 'success') {
-        setMessage('Google Drive connected successfully!')
-      } else if (errorStatus) {
-        setMessage(`Backup authentication failed: ${errorStatus}`)
-      }
-      // Clean URL parameters and path without page reload
-      window.history.replaceState({}, document.title, window.location.origin + '/')
-    }
-  }, [])
 
   useEffect(() => { loadActivePage() }, [loadActivePage])
 
@@ -678,7 +654,7 @@ export default function App() {
       {active === 'Parties/Vendors' && <PartiesPanel parties={data.parties} save={saveSimple} remove={(id) => remove('parties', id)} />}
       {active === 'Sales' && <SalesPanel sales={data.sales} stock={data.stock} accounts={data.accounts} save={saveSimple} remove={(id) => remove('sales', id)} exportSales={downloadSalesExport} importSales={importSales} />}
       {active === 'Stock' && <StockPanel stock={data.stock} save={saveSimple} remove={(id) => remove('stock', id)} exportStock={downloadStockExport} importStock={importStock} />}
-      {active === 'Backup' && <BackupPanel settings={data.backupSettings} history={data.backupHistory} api={api} onRefresh={() => loadActivePage(true)} setMessage={setMessage} />}
+
       {active === 'Settings' && <SettingsPanel accounts={data.accounts} notes={data.notes} save={saveSimple} remove={remove} changePassword={changePassword} themeStyle={themeStyle} setThemeStyle={setThemeStyle} customColors={customColors} setCustomColors={setCustomColors} />}
     </main>
   </div>
@@ -1255,165 +1231,6 @@ function SalesPanel({ sales, stock, accounts, save, remove, exportSales, importS
           </div>
         </div>
       )}
-    </div>
-  )
-}
-
-function BackupPanel({ settings, history, api, onRefresh, setMessage }) {
-  const [backingUp, setBackingUp] = useState(false)
-  const [toggling, setToggling] = useState(false)
-
-  const handleConnect = async () => {
-    try {
-      const res = await api.get('/auth/google/')
-      if (res.data && res.data.auth_url) {
-        window.location.href = res.data.auth_url
-      } else {
-        setMessage('Could not retrieve Google authentication URL.')
-      }
-    } catch (err) {
-      setMessage('Failed to initiate Google Drive authentication.')
-    }
-  }
-
-  const handleToggle = async () => {
-    if (toggling) return
-    setToggling(true)
-    try {
-      await api.post('/backup/settings/', { backup_enabled: !settings?.backup_enabled })
-      onRefresh()
-      setMessage('Backup preference updated.')
-    } catch (err) {
-      setMessage('Failed to update automatic backup settings.')
-    } finally {
-      setToggling(false)
-    }
-  }
-
-  const handleBackupNow = async () => {
-    if (backingUp) return
-    setBackingUp(true)
-    setMessage('Initiating Google Drive upload...')
-    try {
-      const res = await api.post('/backup/trigger/')
-      setMessage(res.data?.detail || 'Manual backup successfully uploaded!')
-      onRefresh()
-    } catch (err) {
-      setMessage(err.response?.data?.detail || 'Manual backup failed. Please check credentials.')
-    } finally {
-      setBackingUp(false)
-    }
-  }
-
-  return (
-    <div style={{ display: 'grid', gap: '20px' }}>
-      <Panel title="Google Drive Automated Backup" icon={Cloud}>
-        <div style={{ display: 'grid', gap: '16px', padding: '10px' }}>
-          <div>
-            <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-color)' }}>Authentication & Status</h3>
-            {settings?.is_authenticated ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#16a34a', fontWeight: 'bold' }}>
-                <CheckCircle2 size={20} /> Connected as {settings.email}
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gap: '10px' }}>
-                <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-color)', opacity: 0.8 }}>
-                  Connect your Google account to authorize LedgerPro to write backups directly to a dedicated folder in your Google Drive storage.
-                </p>
-                <button className="primary" onClick={handleConnect} style={{ width: 'max-content' }}>
-                  Link Google Drive Account
-                </button>
-              </div>
-            )}
-          </div>
-
-          <hr style={{ border: '0', borderTop: 'var(--panel-border)', margin: '10px 0' }} />
-
-          {settings?.is_authenticated && (
-            <div style={{ display: 'grid', gap: '16px' }}>
-              <div>
-                <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-color)' }}>Automatic Daily Backup</h3>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <label style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer', gap: '8px' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={!!settings?.backup_enabled} 
-                      onChange={handleToggle}
-                      disabled={toggling}
-                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                    />
-                    <span style={{ fontSize: '14px', color: 'var(--text-color)' }}>
-                      Enable/Disable Automatic Daily Backup (every 24 hours)
-                    </span>
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-color)' }}>Manual Backup</h3>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <button 
-                    className="primary" 
-                    onClick={handleBackupNow} 
-                    disabled={backingUp}
-                    style={{ minWidth: '150px' }}
-                  >
-                    {backingUp ? 'Backing up...' : 'Backup Now'}
-                  </button>
-                  <span style={{ fontSize: '13px', color: 'var(--text-color)', opacity: 0.7 }}>
-                    Last backed up: {settings.last_backup_at ? new Date(settings.last_backup_at).toLocaleString() : 'Never'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </Panel>
-
-      <Panel title="Backup History Log" icon={Clock3}>
-        <div style={{ padding: '10px' }}>
-          {history && history.length > 0 ? (
-            <div className="tableWrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Timestamp</th>
-                    <th>Backup Archive File</th>
-                    <th>Destination folder ID</th>
-                    <th>Status</th>
-                    <th>Log Details</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {history.map((record) => (
-                    <tr key={record.id}>
-                      <td>{new Date(record.created_at).toLocaleString()}</td>
-                      <td><strong>{record.file_name}</strong></td>
-                      <td><code style={{ fontSize: '12px' }}>{record.drive_file_id || 'N/A'}</code></td>
-                      <td>
-                        <span 
-                          className="pill" 
-                          style={{
-                            backgroundColor: record.status === 'success' ? '#dcfce7' : record.status === 'pending' ? '#fef3c7' : '#fee2e2',
-                            color: record.status === 'success' ? '#15803d' : record.status === 'pending' ? '#b45309' : '#b91c1c'
-                          }}
-                        >
-                          {(record.status || 'pending').toUpperCase()}
-                        </span>
-                      </td>
-                      <td style={{ fontSize: '12px', color: '#dc2626' }}>
-                        {record.error_message || '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <EmptyState title="No backup logs" body="Logs will appear here once manual or automatic backups are performed." />
-          )}
-        </div>
-      </Panel>
     </div>
   )
 }
