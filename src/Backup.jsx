@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Cloud, CheckCircle2, Clock3, HardDrive, RefreshCw, Lock, Database, Trash2, Download, AlertCircle, Play } from 'lucide-react';
+import { Cloud, CheckCircle2, Clock3, HardDrive, RefreshCw, Lock, Database, Trash2, Download, AlertCircle, Play, Activity } from 'lucide-react';
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
 
