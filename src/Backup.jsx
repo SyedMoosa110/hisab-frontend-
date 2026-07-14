@@ -106,6 +106,28 @@ export default function BackupPanel() {
     }
   };
 
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  const handleRestore = async () => {
+    const confirmed = window.confirm("This will replace your current company data.\n\nAre you sure?");
+    if (!confirmed) return;
+    
+    setIsRestoring(true);
+    try {
+      const res = await axios.post(`${apiBase}/backup/restore/`, {}, { withCredentials: true });
+      if (res.data.success) {
+        alert(res.data.message);
+        window.location.reload();
+      } else {
+        alert(`Restore failed\n\nStep: ${res.data.step}\nError: ${res.data.error}`);
+        setIsRestoring(false);
+      }
+    } catch (e) {
+      alert(`Restore failed\n\nError: ${e.response?.data?.error || e.message}`);
+      setIsRestoring(false);
+    }
+  };
+
   const formatBytes = (bytes, decimals = 2) => {
     if (!+bytes) return '0 Bytes';
     const k = 1024;
@@ -120,6 +142,7 @@ export default function BackupPanel() {
   }
 
   const isBackingUp = status?.status !== 'IDLE';
+  const isWorking = isBackingUp || isRestoring;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -144,11 +167,11 @@ export default function BackupPanel() {
               <p><strong>Connected Account:</strong> {status.email}</p>
               <p><strong>Auto Backup:</strong> {status.auto_backup_enabled ? 'Enabled' : 'Disabled'}</p>
               <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
-                <button className="primary" onClick={handleTrigger} disabled={isBackingUp}>
+                <button className="primary" onClick={handleTrigger} disabled={isWorking}>
                   <Play size={16} style={{marginRight: '8px'}} />
                   {isBackingUp ? 'Backing up...' : 'Backup Now'}
                 </button>
-                <button style={{ background: '#ef4444', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer' }} onClick={handleDisconnect} disabled={isBackingUp}>
+                <button style={{ background: '#ef4444', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer' }} onClick={handleDisconnect} disabled={isWorking}>
                   Disconnect Google Drive
                 </button>
               </div>
@@ -156,25 +179,32 @@ export default function BackupPanel() {
           ) : (
             <div>
               <p>Connect your Google Drive account to enable secure cloud backups.</p>
-              <button className="primary" onClick={handleConnect} style={{ marginTop: '10px' }}>
+              <button className="primary" onClick={handleConnect} style={{ marginTop: '10px' }} disabled={isWorking}>
                 Connect Google Drive
               </button>
             </div>
           )}
         </Panel>
 
-        <Panel title="Activity Log" icon={Clock3}>
-          <div style={{ maxHeight: '200px', overflowY: 'auto', background: '#1e293b', color: '#38bdf8', padding: '10px', borderRadius: '6px', fontFamily: 'monospace', fontSize: '12px' }}>
+        <Panel title="Activity Log" icon={Activity}>
+          <div className="activityLog">
             {logs.length > 0 ? logs.map((log, i) => (
-              <div key={i} style={{ marginBottom: '4px' }}>
-                <span style={{ color: '#94a3b8' }}>[{new Date(log.timestamp).toLocaleTimeString()}]</span>{' '}
-                <span style={{ color: log.level === 'ERROR' ? '#f87171' : log.level === 'SUCCESS' ? '#4ade80' : 'inherit' }}>{log.event}</span>
+              <div key={i} className="logEntry">
+                <span className="logTime">{new Date(log.timestamp).toLocaleTimeString()}</span>
+                <span className={`logEvent ${log.level.toLowerCase()}`}>
+                  {log.event}
+                </span>
               </div>
             )) : <p>No recent activity.</p>}
           </div>
           {status?.progress_message && (
              <div style={{ marginTop: '10px', padding: '10px', background: '#f0fdfa', color: '#0f766e', borderRadius: '4px', border: '1px solid #14b8a6' }}>
                <strong>Current Progress:</strong> {status.progress_message}
+             </div>
+          )}
+          {isRestoring && (
+             <div style={{ marginTop: '10px', padding: '10px', background: '#fffbeb', color: '#b45309', borderRadius: '4px', border: '1px solid #f59e0b' }}>
+               <strong>Restoring Database:</strong> Please wait, fetching live logs...
              </div>
           )}
         </Panel>
@@ -202,9 +232,11 @@ export default function BackupPanel() {
                     <td><span className="pill" style={{background: '#dcfce7', color: '#166534'}}>Verified</span></td>
                     <td>
                       <div className="rowActions">
-                        <button className="rowAction" title="Restore" onClick={() => alert('Restore validation successful. Please restart the application.')}><RefreshCw size={15} /></button>
-                        <button className="rowAction" title="Download"><Download size={15} /></button>
-                        <button className="rowAction danger" title="Delete"><Trash2 size={15} /></button>
+                        <button className="rowAction" title="Restore" onClick={handleRestore} disabled={isWorking}>
+                          <RefreshCw size={15} />
+                        </button>
+                        <button className="rowAction" title="Download" disabled={isWorking}><Download size={15} /></button>
+                        <button className="rowAction danger" title="Delete" disabled={isWorking}><Trash2 size={15} /></button>
                       </div>
                     </td>
                   </tr>
