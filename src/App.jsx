@@ -234,6 +234,13 @@ export default function App() {
   const [editingTx, setEditingTx] = useState(null)
 
   const api = useMemo(() => {
+    let deviceId = localStorage.getItem('deviceId')
+    if (!deviceId) {
+      // Create a unique Device ID for this browser
+      deviceId = window.crypto?.randomUUID ? window.crypto.randomUUID() : Math.random().toString(36).substring(2, 15)
+      localStorage.setItem('deviceId', deviceId)
+    }
+
     const instance = axios.create({ baseURL: apiBase, withCredentials: true })
     instance.interceptors.request.use((config) => {
       let token = csrfTokenCached;
@@ -242,6 +249,9 @@ export default function App() {
         if (match) token = match[1]
       }
       if (token) config.headers['X-CSRFToken'] = token
+      
+      // Attach Device ID to all requests
+      config.headers['X-Device-Id'] = deviceId
       return config
     })
     return instance
