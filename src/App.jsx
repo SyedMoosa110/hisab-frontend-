@@ -4,19 +4,21 @@ import {
   ArrowDownCircle, ArrowUpCircle, Banknote, BookOpen, CalendarDays, CheckCircle2,
   Clock3, Download, Edit3, FileSpreadsheet, FileText, Landmark, LayoutDashboard,
   Lock, LogOut, Menu, Plus, ReceiptText, RefreshCw, Search, Settings, Tags,
-  Trash2, Upload, Users, WalletCards, ShoppingCart, Package, Printer,
+  Trash2, Upload, Users, WalletCards, ShoppingCart, Package, Printer, Cloud
 } from 'lucide-react'
 import './App.css'
+import BackupPanel from './Backup.jsx'
 
 const ChartPanel = lazy(() => import('./ChartPanel.jsx'))
 const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
 const navItems = [
   ['Dashboard', LayoutDashboard], ['Transactions', BookOpen], ['Categories', Tags],
   ['Parties/Vendors', Users], ['Sales', ShoppingCart], ['Stock', Package],
-  ['Settings', Settings],
+  ['Backup', Cloud], ['Settings', Settings],
 ]
 const pageCopy = {
   Dashboard: 'Business overview, account balances, and recent money movement.',
+  Backup: 'Securely backup and restore your business data to Google Drive.',
   Transactions: 'Record income and expenses, filter the ledger, and manage dues.',
   Categories: 'Organize income and expenses so reports stay easy to scan.',
   'Parties/Vendors': 'Keep customers, vendors, staff, and other parties in one place.',
@@ -654,6 +656,7 @@ export default function App() {
       {active === 'Parties/Vendors' && <PartiesPanel parties={data.parties} save={saveSimple} remove={(id) => remove('parties', id)} />}
       {active === 'Sales' && <SalesPanel sales={data.sales} stock={data.stock} accounts={data.accounts} save={saveSimple} remove={(id) => remove('sales', id)} exportSales={downloadSalesExport} importSales={importSales} />}
       {active === 'Stock' && <StockPanel stock={data.stock} save={saveSimple} remove={(id) => remove('stock', id)} exportStock={downloadStockExport} importStock={importStock} />}
+      {active === 'Backup' && <BackupPanel />}
 
       {active === 'Settings' && <SettingsPanel accounts={data.accounts} notes={data.notes} save={saveSimple} remove={remove} changePassword={changePassword} themeStyle={themeStyle} setThemeStyle={setThemeStyle} customColors={customColors} setCustomColors={setCustomColors} />}
     </main>
