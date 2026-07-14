@@ -109,7 +109,7 @@ export default function BackupPanel() {
   const [isRestoring, setIsRestoring] = useState(false);
 
   const handleRestore = async () => {
-    const confirmed = window.confirm("This will replace your current company data.\n\nAre you sure?");
+    const confirmed = window.confirm("This will replace your current company data with the latest backup stored in Google Drive. Continue?");
     if (!confirmed) return;
     
     setIsRestoring(true);
@@ -166,10 +166,14 @@ export default function BackupPanel() {
             <div>
               <p><strong>Connected Account:</strong> {status.email}</p>
               <p><strong>Auto Backup:</strong> {status.auto_backup_enabled ? 'Enabled' : 'Disabled'}</p>
-              <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+              <div style={{ marginTop: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 <button className="primary" onClick={handleTrigger} disabled={isWorking}>
                   <Play size={16} style={{marginRight: '8px'}} />
                   {isBackingUp ? 'Backing up...' : 'Backup Now'}
+                </button>
+                <button className="primary" style={{ background: '#0284c7' }} onClick={handleRestore} disabled={isWorking}>
+                  <RefreshCw size={16} style={{marginRight: '8px'}} />
+                  Restore Latest Backup
                 </button>
                 <button style={{ background: '#ef4444', color: 'white', padding: '8px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer' }} onClick={handleDisconnect} disabled={isWorking}>
                   Disconnect Google Drive
