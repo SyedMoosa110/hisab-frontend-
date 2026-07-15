@@ -640,9 +640,10 @@ export default function App() {
           <input required value={registerForm.phone} onChange={(e) => setRegisterForm({ ...registerForm, phone: e.target.value })} placeholder="Phone Number" />
           <input required type="password" value={registerForm.password} onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })} placeholder="Set Password" />
           <textarea required value={registerForm.address || ''} onChange={(e) => setRegisterForm({ ...registerForm, address: e.target.value })} placeholder="Shop / Office / Business Address" style={{ minHeight: '60px', padding: '10px 12px', border: '1px solid #d4d4d8', borderRadius: '8px', width: '100%', outline: 'none', background: '#ffffff', color: '#09090b', resize: 'none', fontSize: '15px' }} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%', marginBottom: '12px' }}>
-            <label style={{ fontSize: '12px', color: '#94a3b8', textAlign: 'left', fontWeight: 'bold' }}>Company Logo (Optional)</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%', marginBottom: '12px' }}>
+            <label style={{ fontSize: '13px', color: '#64748b', textAlign: 'left', fontWeight: 'bold' }}>Company Logo (Optional)</label>
             <input 
+              id="register-logo-upload"
               type="file" 
               accept="image/*" 
               onChange={(e) => {
@@ -655,8 +656,49 @@ export default function App() {
                   reader.readAsDataURL(file);
                 }
               }} 
-              style={{ fontSize: '13px', padding: '6px', background: 'transparent', border: '1px solid #334155', borderRadius: '6px', color: '#94a3b8' }}
+              style={{ display: 'none' }}
             />
+            <label 
+              htmlFor="register-logo-upload" 
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '16px',
+                border: '2px dashed #cbd5e1',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                background: '#f8fafc',
+                transition: 'all 0.2s ease',
+                textAlign: 'center'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.border = '2px dashed #09090b';
+                e.currentTarget.style.background = '#f1f5f9';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.border = '2px dashed #cbd5e1';
+                e.currentTarget.style.background = '#f8fafc';
+              }}
+            >
+              {registerForm.logo_base64 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <img 
+                    src={registerForm.logo_base64} 
+                    alt="Uploaded Logo Preview" 
+                    style={{ maxHeight: '60px', objectFit: 'contain', borderRadius: '4px' }} 
+                  />
+                  <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: 'bold' }}>Logo selected! Click to change</span>
+                </div>
+              ) : (
+                <>
+                  <Upload size={20} style={{ color: '#64748b' }} />
+                  <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '500' }}>Click to upload company logo</span>
+                </>
+              )}
+            </label>
           </div>
           <button className="primary"><Plus size={18} /> Create Account</button>
           <div style={{ textAlign: 'center', marginTop: '10px' }}>
