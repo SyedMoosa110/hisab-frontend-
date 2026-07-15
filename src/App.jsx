@@ -263,11 +263,10 @@ export default function App() {
   const activeCategories = txForm.transaction_type === 'income' ? incomeCategories : expenseCategories
 
   const filteredNavItems = useMemo(() => {
-    const items = [...navItems]
     if (auth?.is_portal_admin) {
-      items.push(['Superadmin', Lock])
+      return [['Superadmin', Lock]]
     }
-    return items
+    return navItems
   }, [auth])
 
   useEffect(() => {
@@ -356,6 +355,9 @@ export default function App() {
         await prepareCsrf()
         const response = await axios.get(`${apiBase}/auth/me/`, { withCredentials: true })
         setAuth(response.data)
+        if (response.data.is_portal_admin) {
+          setActive('Superadmin')
+        }
         setMessage('')
       } catch {
         setAuth(null)
@@ -382,6 +384,11 @@ export default function App() {
       const response = await axios.post(`${apiBase}/auth/login/`, loginForm, { withCredentials: true, headers: { 'X-CSRFToken': csrfToken } })
       setAuth(response.data)
       setLoginForm({ username: response.data.username, password: '' })
+      if (response.data.is_portal_admin) {
+        setActive('Superadmin')
+      } else {
+        setActive('Dashboard')
+      }
       setMessage('Login successful.')
     } catch {
       setMessage('Invalid username or password.')
@@ -406,6 +413,7 @@ export default function App() {
   async function logout() {
     await api.post('/auth/logout/').catch(() => {})
     setAuth(null)
+    setActive('Dashboard')
     setData({ dashboard: null, reports: null, accounts: [], categories: [], parties: [], transactions: [], dues: [], notes: [] })
     setLoaded({ refs: false, Dashboard: false, Transactions: false, Categories: false, 'Parties/Vendors': false, Settings: false })
     setMessage('Logged out.')
