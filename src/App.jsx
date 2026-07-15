@@ -422,17 +422,9 @@ export default function App() {
   async function saveTransaction(event) {
     event.preventDefault()
     await prepareCsrf()
-    const formData = new FormData()
-    Object.entries(txForm).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-        if (key === 'attachment' && !(value instanceof File)) return
-        formData.append(key, value)
-      }
-    })
-    // Form will require category and account natively using 'required'
     try {
-      if (editingTx) await api.patch(`/transactions/${editingTx.id}/`, formData)
-      else await api.post('/transactions/', formData)
+      if (editingTx) await api.patch(`/transactions/${editingTx.id}/`, txForm)
+      else await api.post('/transactions/', txForm)
       setTxForm(emptyTransaction(txForm.transaction_type))
       setEditingTx(null)
       setLoaded((current) => ({ ...current, Dashboard: false, Transactions: false }))
@@ -450,7 +442,7 @@ export default function App() {
 
   function editTransaction(tx) {
     setEditingTx(tx)
-    setTxForm({ ...emptyTransaction(tx.transaction_type), ...tx, category: tx.category, account: tx.account, party: tx.party || '', attachment: null })
+    setTxForm({ ...emptyTransaction(tx.transaction_type), ...tx, category: tx.category, account: tx.account, party: tx.party || '', attachment: tx.attachment })
     setActive('Transactions')
   }
 
@@ -771,7 +763,35 @@ function TransactionForm({ form, setForm, save, accounts, categories, parties, e
     </div>
     <Field label="Reference"><input placeholder="Invoice or payment reference" value={form.reference_number || ''} onChange={(e) => setForm({ ...form, reference_number: e.target.value })} /></Field>
     <Field label="Notes"><textarea placeholder="Optional details" value={form.notes || ''} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
-    <label className="upload"><Upload size={18} /><span>Receipt / invoice upload</span><input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp,application/pdf" onChange={(e) => setForm({ ...form, attachment: e.target.files[0] })} /></label>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%', marginBottom: '8px' }}>
+      <label className="upload">
+        <Upload size={18} />
+        <span>{form.attachment ? (form.attachment.startsWith('data:') ? 'New file selected' : 'Existing receipt uploaded') : 'Receipt / invoice upload'}</span>
+        <input 
+          type="file" 
+          accept=".pdf,.png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp,application/pdf" 
+          onChange={(e) => {
+            const file = e.target.files[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                setForm({ ...form, attachment: reader.result });
+              };
+              reader.readAsDataURL(file);
+            }
+          }} 
+        />
+      </label>
+      {form.attachment && (
+        <button 
+          type="button" 
+          onClick={() => setForm({ ...form, attachment: null })} 
+          style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', textAlign: 'left', cursor: 'pointer', padding: '0', display: 'block', width: 'fit-content' }}
+        >
+          Remove attachment
+        </button>
+      )}
+    </div>
     <div className="formActions"><button className="primary"><CheckCircle2 size={18} /> {editing ? 'Update entry' : 'Save entry'}</button>{editing && <button type="button" onClick={cancel}>Cancel</button>}</div>
   </form>
 }
