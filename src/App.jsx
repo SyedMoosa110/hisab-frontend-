@@ -92,6 +92,7 @@ const themePresets = {
     '--panel-shadow': '0 8px 30px rgba(0, 0, 0, 0.03)',
     '--card-glow': 'none',
     '--row-hover': '#f4f4f5',
+    '--pill-bg': '#e4e4e7',
   },
   glassmorphism: {
     '--primary-color': '#6366f1',
@@ -109,6 +110,7 @@ const themePresets = {
     '--panel-shadow': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
     '--card-glow': 'inset 0 0 0 1px rgba(255, 255, 255, 0.5)',
     '--row-hover': 'rgba(255, 255, 255, 0.15)',
+    '--pill-bg': 'rgba(255, 255, 255, 0.25)',
   },
   dark: {
     '--primary-color': '#14b8a6',
@@ -126,6 +128,7 @@ const themePresets = {
     '--panel-shadow': '0 4px 20px rgba(0, 0, 0, 0.3)',
     '--card-glow': 'none',
     '--row-hover': '#1f2937',
+    '--pill-bg': '#243048',
   },
   brutalism: {
     '--primary-color': '#facc15',
@@ -143,6 +146,7 @@ const themePresets = {
     '--panel-shadow': '5px 5px 0px #000000',
     '--card-glow': 'none',
     '--row-hover': '#e5e7eb',
+    '--pill-bg': '#ffffff',
   },
   cyberpunk: {
     '--primary-color': '#ff007f',
@@ -160,6 +164,7 @@ const themePresets = {
     '--panel-shadow': '0 0 10px rgba(0, 255, 255, 0.25)',
     '--card-glow': '0 0 5px rgba(255, 0, 127, 0.2)',
     '--row-hover': '#161622',
+    '--pill-bg': 'rgba(0, 255, 255, 0.15)',
   },
   pastel: {
     '--primary-color': '#fda4af',
@@ -177,6 +182,7 @@ const themePresets = {
     '--panel-shadow': '0 10px 20px rgba(120, 113, 108, 0.04)',
     '--card-glow': 'none',
     '--row-hover': '#e7e5e4',
+    '--pill-bg': '#fae8ff',
   }
 }
 

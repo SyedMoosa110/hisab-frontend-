@@ -302,26 +302,26 @@ export default function SuperadminPanel() {
                     </td>
                     <td style={{ padding: '12px 8px' }}>
                       {user.is_upgraded ? (
-                        <span style={{ background: '#ecfdf5', color: '#047857', padding: '3px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>
+                        <span style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '3px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>
                           Premium
                         </span>
                       ) : user.is_expired ? (
-                        <span style={{ background: '#fef2f2', color: '#b91c1c', padding: '3px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>
+                        <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '3px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>
                           Expired Trial
                         </span>
                       ) : (
-                        <span style={{ background: '#fffbeb', color: '#b45309', padding: '3px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>
+                        <span style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', padding: '3px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>
                           Free Trial
                         </span>
                       )}
                     </td>
                     <td style={{ padding: '12px 8px' }}>
                       {user.is_blocked ? (
-                        <span style={{ background: '#fef2f2', color: '#b91c1c', padding: '3px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>
+                        <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '3px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>
                           Blocked
                         </span>
                       ) : (
-                        <span style={{ background: '#f0fdf4', color: '#166534', padding: '3px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>
+                        <span style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '3px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>
                           Active
                         </span>
                       )}
