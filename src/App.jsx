@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import './App.css'
 import BackupPanel from './Backup.jsx'
+import SuperadminPanel from './Superadmin.jsx'
 
 const ChartPanel = lazy(() => import('./ChartPanel.jsx'))
 const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
@@ -25,6 +26,7 @@ const pageCopy = {
   Sales: 'Track product sales, record custom sales, and manage sales revenue.',
   Stock: 'Monitor inventory levels, view total, sold, and remaining stock.',
   Settings: 'Manage accounts, reminders, and admin access.',
+  Superadmin: 'Manage all user accounts, active trials, and company plan statuses.',
 }
 
 function currency(value) {
@@ -259,6 +261,14 @@ export default function App() {
   const incomeCategories = useMemo(() => data.categories.filter((c) => c.category_type === 'income'), [data.categories])
   const expenseCategories = useMemo(() => data.categories.filter((c) => c.category_type === 'expense'), [data.categories])
   const activeCategories = txForm.transaction_type === 'income' ? incomeCategories : expenseCategories
+
+  const filteredNavItems = useMemo(() => {
+    const items = [...navItems]
+    if (auth?.is_portal_admin) {
+      items.push(['Superadmin', Lock])
+    }
+    return items
+  }, [auth])
 
   useEffect(() => {
     if (!txForm.account && data.accounts.length === 1) {
@@ -631,7 +641,7 @@ export default function App() {
           </span>
         </div>
       </div>
-      <nav>{navItems.map(([item, Icon]) => <button className={active === item ? 'active' : ''} key={item} onClick={() => { setActive(item); setMenuOpen(false) }}><Icon size={18} /> {item}</button>)}</nav>
+      <nav>{filteredNavItems.map(([item, Icon]) => <button className={active === item ? 'active' : ''} key={item} onClick={() => { setActive(item); setMenuOpen(false) }}><Icon size={18} /> {item}</button>)}</nav>
     </aside>
     <main>
       <header className="topbar">
@@ -683,6 +693,7 @@ export default function App() {
       {active === 'Sales' && <SalesPanel sales={data.sales} stock={data.stock} accounts={data.accounts} save={saveSimple} remove={(id) => remove('sales', id)} exportSales={downloadSalesExport} importSales={importSales} />}
       {active === 'Stock' && <StockPanel stock={data.stock} save={saveSimple} remove={(id) => remove('stock', id)} exportStock={downloadStockExport} importStock={importStock} />}
       {active === 'Backup' && <BackupPanel />}
+      {active === 'Superadmin' && auth?.is_portal_admin && <SuperadminPanel />}
 
       {active === 'Settings' && <SettingsPanel accounts={data.accounts} notes={data.notes} save={saveSimple} remove={remove} changePassword={changePassword} themeStyle={themeStyle} setThemeStyle={setThemeStyle} customColors={customColors} setCustomColors={setCustomColors} />}
     </main>
