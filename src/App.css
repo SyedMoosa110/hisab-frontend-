@@ -77,8 +77,9 @@ button {
   border-radius: 8px;
   display: grid;
   place-items: center;
-  background: #2dd4bf;
-  color: #042f2e;
+  background: var(--bg-color);
+  color: var(--text-color);
+  border: var(--panel-border);
 }
 
 .brand strong {
@@ -266,10 +267,10 @@ small {
   line-height: 1.15;
 }
 
-.blue .metricIcon { color: #2563eb; background: #eff6ff; }
-.green .metricIcon { color: #0f766e; background: #ecfdf5; }
-.red .metricIcon { color: #dc2626; background: #fef2f2; }
-.amber .metricIcon { color: #b45309; background: #fffbeb; }
+.blue .metricIcon { color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+.green .metricIcon { color: #10b981; background: rgba(16, 185, 129, 0.1); }
+.red .metricIcon { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+.amber .metricIcon { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
 
 .period {
   padding: 14px 16px;
@@ -313,12 +314,13 @@ small {
 
 .panelMeta {
   flex: 0 0 auto;
-  border: 1px solid #dce5f0;
+  border: var(--panel-border);
   border-radius: 999px;
   padding: 5px 9px;
-  color: #64748b;
+  color: var(--text-color);
+  background: var(--bg-color);
+  opacity: 0.8;
   font-size: 12px;
-  background: #f8fafc;
 }
 
 .split {
@@ -341,13 +343,15 @@ small {
 }
 
 .field > span {
-  color: #475569;
+  color: var(--text-color);
+  opacity: 0.8;
   font-size: 13px;
   font-weight: 700;
 }
 
 .fieldHint {
-  color: #64748b;
+  color: var(--text-color);
+  opacity: 0.6;
   font-size: 12px;
 }
 
@@ -511,17 +515,18 @@ textarea:focus {
 }
 
 .ledgerSummary span {
-  border: 1px solid #e1e8f0;
+  border: var(--panel-border);
   border-radius: 8px;
   padding: 10px 12px;
-  color: #64748b;
-  background: #f8fafc;
+  color: var(--text-color);
+  opacity: 0.8;
+  background: var(--bg-color);
 }
 
 .ledgerSummary strong {
   display: block;
   margin-top: 3px;
-  color: #111827;
+  color: var(--text-color);
 }
 
 .exportGrid {
@@ -533,7 +538,7 @@ textarea:focus {
 
 .tableWrap {
   overflow-x: auto;
-  border: 1px solid #e2e8f0;
+  border: var(--panel-border);
   border-radius: 8px;
 }
 
@@ -551,18 +556,19 @@ th,
 td {
   text-align: left;
   padding: 12px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: var(--panel-border);
   vertical-align: middle;
 }
 
 th {
-  color: #475569;
+  color: var(--text-color);
+  opacity: 0.7;
   font-size: 13px;
-  background: #f8fafc;
+  background: var(--bg-color);
 }
 
 tbody tr:hover {
-  background: #fbfdff;
+  background: var(--sidebar-hover);
 }
 
 tbody tr:last-child td {
@@ -572,14 +578,15 @@ tbody tr:last-child td {
 td small {
   display: block;
   margin-top: 4px;
+  opacity: 0.6;
 }
 
 .positive {
-  color: #047857;
+  color: #10b981;
 }
 
 .negative {
-  color: #b91c1c;
+  color: #ef4444;
 }
 
 .pill {
@@ -588,14 +595,15 @@ td small {
   min-height: 26px;
   border-radius: 999px;
   padding: 0 9px;
-  background: #eef2f7;
-  color: #475569;
+  background: var(--sidebar-hover);
+  color: var(--text-color);
+  opacity: 0.8;
   font-size: 12px;
   font-weight: 700;
 }
 
 .textLink {
-  color: #0f766e;
+  color: var(--primary-color);
   font-weight: 700;
 }
 
@@ -630,14 +638,14 @@ td small {
 .accountList div,
 .dueList div,
 .simpleList div {
-  border: 1px solid #e2e8f0;
+  border: var(--panel-border);
   border-radius: 8px;
   padding: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: #ffffff;
+  background: var(--panel-bg);
 }
 
 .accountList span,
@@ -661,7 +669,8 @@ td small {
 .activityGrid h3,
 .sectionLabel {
   margin: 0 0 8px;
-  color: #475569;
+  color: var(--text-color);
+  opacity: 0.7;
   font-size: 14px;
 }
 
@@ -670,7 +679,7 @@ td small {
 }
 
 .activityGrid p {
-  border: 1px solid #e2e8f0;
+  border: var(--panel-border);
   border-radius: 8px;
   padding: 10px 12px;
   margin: 0 0 8px;
@@ -679,30 +688,32 @@ td small {
 }
 
 .activityGrid span {
-  color: #64748b;
+  color: var(--text-color);
+  opacity: 0.6;
   font-size: 13px;
 }
 
 .emptyState {
   margin: 0;
-  border: 1px dashed #cbd7e6;
+  border: 1px dashed var(--text-color);
   border-radius: 8px;
   padding: 18px;
   display: grid;
   gap: 5px;
-  color: #64748b;
-  background: #f8fafc;
+  color: var(--text-color);
+  opacity: 0.8;
+  background: var(--bg-color);
 }
 
 .emptyState strong {
-  color: #172033;
+  color: var(--text-color);
 }
 
 .loginPage {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  background: radial-gradient(circle at top right, #115e59, #0f172a);
+  background: radial-gradient(circle at top right, #27272a, #000000);
   padding: 20px;
 }
 
@@ -711,19 +722,19 @@ td small {
   display: grid;
   gap: 18px;
   padding: 40px 32px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.6);
 }
 
 .loginBox input {
   width: 100%;
   padding: 12px 16px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.05);
   color: #ffffff;
   font-size: 15px;
@@ -732,13 +743,13 @@ td small {
 }
 
 .loginBox input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .loginBox input:focus {
-  border-color: #2dd4bf;
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.2);
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
 }
 
 .loginBox button.primary {
@@ -746,8 +757,8 @@ td small {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: #2dd4bf;
-  color: #042f2e;
+  background: #ffffff;
+  color: #000000;
   border: none;
   font-weight: 600;
   padding: 12px;
@@ -756,9 +767,9 @@ td small {
 }
 
 .loginBox button.primary:hover {
-  background: #14b8a6;
+  background: #e4e4e7;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
 }
 
 .loginBox button.primary:active {
