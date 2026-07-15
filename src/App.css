@@ -62,6 +62,8 @@ button {
   color: var(--sidebar-text);
   border-right: 1px solid var(--sidebar-border);
   transition: background var(--transition-speed), color var(--transition-speed), border var(--transition-speed);
+  display: flex;
+  flex-direction: column;
 }
 
 .brand {
