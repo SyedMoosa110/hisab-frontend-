@@ -152,9 +152,28 @@ export default function BackupPanel() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {status?.success === false && (
-        <div style={{ padding: '15px', background: '#fef2f2', border: '1px solid #f87171', color: '#b91c1c', borderRadius: '6px' }}>
-          <AlertCircle size={20} style={{ verticalAlign: 'middle', marginRight: '10px' }} />
-          <strong>System Warning:</strong> {status.error || status.message}
+        <div style={{ padding: '15px', background: '#fef2f2', border: '1px solid #f87171', color: '#b91c1c', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <AlertCircle size={20} style={{ verticalAlign: 'middle', marginRight: '10px' }} />
+            <strong>System Warning:</strong> {status.error || status.message}
+          </div>
+          {(status.error || status.message)?.includes('migrations') && (
+            <button className="primary" onClick={async () => {
+              try {
+                const res = await axios.post(`${apiBase}/backup/migrate/`, {}, { withCredentials: true });
+                if (res.data.success) {
+                  alert(res.data.message);
+                  window.location.reload();
+                } else {
+                  alert(`Migration failed: ${res.data.error}`);
+                }
+              } catch (err) {
+                alert(`Error executing migrations: ${err.message}`);
+              }
+            }} style={{ background: '#dc2626', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
+              Run Migrations
+            </button>
+          )}
         </div>
       )}
 
