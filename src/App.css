@@ -830,51 +830,48 @@ td small {
 }
 
 @media print {
-  .sidebar,
-  .topbar,
-  .notice,
-  .panel,
-  .invoice-actions,
-  .statsGrid,
-  .periodGrid,
-  .contentGrid,
-  .dashboardReport,
-  .ledgerSummary,
-  .filters,
-  .exportGrid,
-  .salesForm,
-  .stockContainer,
-  .inlineForm {
-    display: none !important;
+  /* Hide everything on the page */
+  body * {
+    visibility: hidden;
   }
 
-  body, .app, main {
-    background: #ffffff !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    display: block !important;
+  /* Show only the printable invoice modal overlay and its children */
+  .modalOverlay,
+  .modalOverlay *,
+  .printable-invoice,
+  .printable-invoice * {
+    visibility: visible;
   }
 
+  /* Reset layout constraints and background styling for print output */
   .modalOverlay {
     position: absolute !important;
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
     height: auto !important;
-    background: #ffffff !important;
+    background: transparent !important;
     padding: 0 !important;
-    display: block !important;
-    z-index: auto !important;
+    margin: 0 !important;
     backdrop-filter: none !important;
+    box-shadow: none !important;
   }
 
   .printable-invoice {
     border: none !important;
     box-shadow: none !important;
+    background: transparent !important;
     padding: 0 !important;
-    margin: 0 !important;
+    margin: 0 auto !important;
     width: 100% !important;
     max-width: 100% !important;
+  }
+
+  /* Explicitly remove the invoice actions (buttons) from the printout */
+  .invoice-actions,
+  .invoice-actions * {
+    display: none !important;
+    visibility: hidden !important;
   }
 }
 
