@@ -832,15 +832,49 @@ td small {
 @media print {
   .sidebar,
   .topbar,
-  .entryForm,
+  .notice,
+  .panel,
+  .invoice-actions,
+  .statsGrid,
+  .periodGrid,
+  .contentGrid,
+  .dashboardReport,
+  .ledgerSummary,
   .filters,
-  .exportGrid {
-    display: none;
+  .exportGrid,
+  .salesForm,
+  .stockContainer,
+  .inlineForm {
+    display: none !important;
   }
 
-  .app {
-    display: block;
-    background: #ffffff;
+  body, .app, main {
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+  }
+
+  .modalOverlay {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    display: block !important;
+    z-index: auto !important;
+    backdrop-filter: none !important;
+  }
+
+  .printable-invoice {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }
 
