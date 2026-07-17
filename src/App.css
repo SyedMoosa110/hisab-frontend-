@@ -1071,6 +1071,7 @@ td small {
 
 .invoice-table {
   width: 100%;
+  min-width: unset;
   border-collapse: collapse;
   margin: 10px 0;
 }

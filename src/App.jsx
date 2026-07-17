@@ -1355,9 +1355,15 @@ function SalesPanel({ sales, stock, accounts, save, remove, exportSales, importS
         <div className="modalOverlay" onClick={() => setActiveInvoice(null)}>
           <div className="printable-invoice" onClick={(e) => e.stopPropagation()}>
             <div className="invoice-header">
-              <div className="invoice-brand">
-                <Landmark size={28} />
-                <h2>LedgerPro</h2>
+              <div className="invoice-brand" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {auth?.company_logo ? (
+                  <img src={auth.company_logo} alt="Logo" style={{ maxHeight: '35px', maxWidth: '120px', objectFit: 'contain', borderRadius: '4px' }} />
+                ) : CGPLUX_LOGO ? (
+                  <img src={CGPLUX_LOGO} alt="Logo" style={{ maxHeight: '35px', maxWidth: '120px', objectFit: 'contain', borderRadius: '4px' }} />
+                ) : (
+                  <Landmark size={28} />
+                )}
+                <h2>{auth?.company_name || 'cgplux STUDIOS'}</h2>
               </div>
               <div className="invoice-meta">
                 <h3>INVOICE</h3>
